@@ -10,11 +10,11 @@ export interface Store {
 }
 
 export interface Meta {
-    touched: boolean;
+    touched?: boolean;
     validating: boolean;
-    errors: string[];
-    name: InternalNamePath;
-    submitting: boolean;
+    errors: string;
+    name?: InternalNamePath;
+    submitting?: boolean;
 }
 
 export interface InternalFieldData extends Meta {
