@@ -1,37 +1,15 @@
-import { getSnapshot, Instance, TypeOfValue, types } from "mobx-state-tree";
+import { toJS } from "mobx";
+import { addMiddleware, getSnapshot, Instance, TypeOfValue, types } from "mobx-state-tree";
 import React, { useImperativeHandle } from "react";
 import { Provider } from "./context";
 
 import { FieldStore } from "./Field";
-import { Callbacks } from "./interface";
+import { FormStore } from "./formType";
+import { Callbacks, Rule, ValidateMessages } from "./interface";
 
 
-export const FormStore = types.model("Form", {
-    fields: types.optional(types.map(FieldStore), {})
-}).actions((self) => ({
-    registerField(data) {
-        self.fields.put(data)
-    },
 
-    dropField(name: string) {
-        self.fields.delete(name)
-    },
-    setField(name: string, value: any) {
-        const cur = self.fields.get(name)
-        self.fields.set(name, { ...cur, value })
-    },
-    reset(){
-        self.fields.forEach(item=>item.reset())
-    }
 
-})).views((self) => ({
-    getFieldValue(name: string) {
-        return self.fields.get(name)?.value
-    },
-    hasField(name: string) {
-        return self.fields.has(name)
-    },
-}))
 
 export interface IFormProps {
     initialValues?: { [name: string]: any },
@@ -41,24 +19,41 @@ export interface IFormProps {
     onValuesChange: Callbacks<any>['onValuesChange']
     onFieldsChange: Callbacks<any>['onFieldsChange']
     onFinish: Callbacks<any>['onFinish']
-}
-const formState=FormStore.create({ fields: {} },)
-const Form: React.ForwardRefRenderFunction<any, IFormProps> = ({ children, component: Component = "form" as any,onFinish }, ref) => {
-
+    validateMessages?:ValidateMessages
    
+}
+const formState = FormStore.create({ fields: {} },)
+const Form= React.forwardRef<any,IFormProps>(({ children, component: Component = "form" as any, onFinish, onValuesChange }, ref) => {
+
+
     // useImperativeHandle(
     //     ref,
     //     () => ({
     //         getFieldValue(name:string){
     //             return formState.getFieldValue(name)
     //         },
-           
+
     //     }),
     //     [],
     // )
 
+    const getValues=(args)=>{
+        return formState.getFieldKeys(args[0],args[1])
+    }
+    const disposer = (baseStore) => {
+        if (onValuesChange) {
+            addMiddleware(baseStore, (call, next, abort) => {
+                if (call.name === "setField") {
+                    const args = call.args
+                    onValuesChange({ [args[0]]: args[1] }, getValues(args))
+                }
+                return next(call)
+            })
+        }
+        return baseStore
+    }
     const wrapperNode = (
-        <Provider value={formState}>{children}</Provider>
+        <Provider value={disposer(formState)}>{children}</Provider>
     );
 
     if (Component === false) {
@@ -69,17 +64,17 @@ const Form: React.ForwardRefRenderFunction<any, IFormProps> = ({ children, compo
         onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
             e.preventDefault();
             e.stopPropagation();
-            onFinish(getSnapshot(formState))
-            
+            onFinish(getSnapshot(formState, true))
+
         }}
         onReset={(event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault();
             formState.reset()
-            
+
         }}
     >
         {wrapperNode}
     </Component >
-}
+})
 
 export default Form
