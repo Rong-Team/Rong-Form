@@ -1,8 +1,11 @@
-import {Field} from 'rong-form'
-export default ()=>{
+import { Field, Form } from 'rong-form'
+export default () => {
+    
     return (
-        <Field renderer={ <input type="text"/>}>
-           
-        </Field>
+        <Form>
+            <Field name="username">
+                <input type="text" />
+            </Field>
+        </Form>
     )
 }
