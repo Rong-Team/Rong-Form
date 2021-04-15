@@ -2,15 +2,16 @@ import { types, } from 'mobx-state-tree'
 import { inject, observer, } from 'mobx-react'
 import React, { Component, useEffect } from 'react'
 import { defaultGetValueFromEvent, toArray as toChildrenArray, warning } from './utils'
-import { NamePath } from './interface'
+import { Meta, NamePath, Rule } from './interface'
 import { useMst } from './context'
 
 export const FieldStore = types.model("field", {
     name: types.identifier,
 
     value: types.maybeNull(types.string),
-    error: types.maybeNull(types.string)
-
+    error: types.maybeNull(types.string),
+    validating:types.optional(types.boolean,false)
+    
 }).actions((self) => ({
     setValue(value: any) {
         self.value = value
@@ -30,6 +31,7 @@ export interface IField {
     valuePropName?: string
     getValueFromEvents?: (...args: any) => any
     // renderer:React.ReactNode
+    rules:Rule[]
 }
 
 const Field: React.FC<IField> = observer(({
@@ -38,10 +40,11 @@ const Field: React.FC<IField> = observer(({
     trigger = "onChange",
     valuePropName = "value",
     defaultValue="",
-    getValueFromEvents
+    getValueFromEvents,
+    rules
 }) => {
     const store = useMst()
-
+    
     useEffect(() => {
 
         if (!name) {
@@ -58,7 +61,23 @@ const Field: React.FC<IField> = observer(({
         }
     }, [])
 
+    const getMeta=()=>{
+        const data=store.getFieldByName(name)
+        return {
+            errors:data.error,
+            validating:data.validating,
+            name:[name]
+        } as Meta
+    }
+
     const getOnlyChild = (children: React.ReactNode) => {
+        if(typeof children==='function'){
+            const meta=getMeta()
+            return {
+                ...getOnlyChild(children(getControlled(),meta)),
+                isFunction:true
+            }
+        }
         const childList = toChildrenArray(children);
         if (childList.length !== 1 || !React.isValidElement(childList[0])) {
             return { child: childList, isFunction: false };
@@ -72,7 +91,7 @@ const Field: React.FC<IField> = observer(({
         const mergedGetValueProps = ((val) => ({ [valuePropName]: val }));
         const control = {
             ...childProps,
-            ...mergedGetValueProps(store.getFieldValue(name) || defaultValue),
+            ...mergedGetValueProps(store.getFieldValue?store.getFieldValue(name): defaultValue),
 
         };
         control[trigger] = (...args: any) => {
