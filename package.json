@@ -27,6 +27,7 @@
     ]
   },
   "dependencies": {
+    "async-validator": "^3.5.1",
     "mobx": "^6.2.0",
     "mobx-react": "^7.1.0",
     "mobx-state-tree": "^5.0.1",
