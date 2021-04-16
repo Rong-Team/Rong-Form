@@ -1,17 +1,17 @@
 import { types, } from 'mobx-state-tree'
 import { inject, observer, } from 'mobx-react'
 import React, { Component, useEffect } from 'react'
-import { defaultGetValueFromEvent, toArray as toChildrenArray, warning } from './utils'
-import { Meta, NamePath, Rule } from './interface'
+import { defaultGetValueFromEvent, toArray, toArray as toChildrenArray, warning } from './utils'
+import { Meta, NamePath, Rule, RuleObject, ValidateTriggerType } from './interface'
 import { useMst } from './context'
 
 export const FieldStore = types.model("field", {
     name: types.identifier,
 
     value: types.maybeNull(types.string),
-    error: types.maybeNull(types.string),
-    validating:types.optional(types.boolean,false)
-    
+    error: types.maybeNull(types.array(types.string)),
+    validating: types.optional(types.boolean, false)
+
 }).actions((self) => ({
     setValue(value: any) {
         self.value = value
@@ -24,14 +24,13 @@ export const FieldStore = types.model("field", {
 export interface IField {
     name: string
     defaultValue?: string
-    type?: 'string' | 'number',
     trigger?: string,
-    validateOn?: 'change' | 'blur'
+    validateTrigger?: ValidateTriggerType[]
     dependencies?: NamePath[],
     valuePropName?: string
     getValueFromEvents?: (...args: any) => any
     // renderer:React.ReactNode
-    rules:Rule[]
+    rules: RuleObject
 }
 
 const Field: React.FC<IField> = observer(({
@@ -39,12 +38,13 @@ const Field: React.FC<IField> = observer(({
     name,
     trigger = "onChange",
     valuePropName = "value",
-    defaultValue="",
+    defaultValue = "",
     getValueFromEvents,
+    validateTrigger,
     rules
 }) => {
-    const store = useMst()
-    
+    const { store, validateTrigger: RootTrigger } = useMst()
+
     useEffect(() => {
 
         if (!name) {
@@ -61,21 +61,21 @@ const Field: React.FC<IField> = observer(({
         }
     }, [])
 
-    const getMeta=()=>{
-        const data=store.getFieldByName(name)
+    const getMeta = () => {
+        const data = store.getFieldByName(name)
         return {
-            errors:data.error,
-            validating:data.validating,
-            name:[name]
+            errors: data.error,
+            validating: data.validating,
+            name: [name]
         } as Meta
     }
 
     const getOnlyChild = (children: React.ReactNode) => {
-        if(typeof children==='function'){
-            const meta=getMeta()
+        if (typeof children === 'function') {
+            const meta = getMeta()
             return {
-                ...getOnlyChild(children(getControlled(),meta)),
-                isFunction:true
+                ...getOnlyChild(children(getControlled(), meta)),
+                isFunction: true
             }
         }
         const childList = toChildrenArray(children);
@@ -91,7 +91,7 @@ const Field: React.FC<IField> = observer(({
         const mergedGetValueProps = ((val) => ({ [valuePropName]: val }));
         const control = {
             ...childProps,
-            ...mergedGetValueProps(store.getFieldValue?store.getFieldValue(name): defaultValue),
+            ...mergedGetValueProps(store.getFieldValue ? store.getFieldValue(name) : defaultValue),
 
         };
         control[trigger] = (...args: any) => {
@@ -102,7 +102,30 @@ const Field: React.FC<IField> = observer(({
                 newValue = defaultGetValueFromEvent(valuePropName, ...args)
             }
             store.setField(name, newValue)
+
+            if (originTriggerFunc) {
+                originTriggerFunc(...args)
+            }
         }
+        let mergedValidate = validateTrigger ? validateTrigger : RootTrigger
+
+        mergedValidate.forEach(item => {
+            const originTrigger = control[item];
+            control[item] = (...args: any) => {
+                if (originTrigger) {
+                    originTrigger(...args);
+                }
+
+                // Always use latest rules
+
+                if (rules) {
+                    // We dispatch validate to root,
+                    // since it will update related data with other field with same name
+                    store.validateFields(name, rules)
+                }
+            };
+        })
+
 
         return control
     }
