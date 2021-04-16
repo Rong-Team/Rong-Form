@@ -5,7 +5,7 @@ import { Provider } from "./context";
 
 import { FieldStore } from "./Field";
 import { FormStore } from "./formType";
-import { Callbacks, Rule, ValidateMessages } from "./interface";
+import { Callbacks, Rule, ValidateMessages, ValidateTriggerType } from "./interface";
 
 
 
@@ -20,10 +20,17 @@ export interface IFormProps {
     onFieldsChange: Callbacks<any>['onFieldsChange']
     onFinish: Callbacks<any>['onFinish']
     validateMessages?:ValidateMessages
-   
+    validateTrigger?:ValidateTriggerType[]
 }
 const formState = FormStore.create({ fields: {} },)
-const Form= React.forwardRef<any,IFormProps>(({ children, component: Component = "form" as any, onFinish, onValuesChange }, ref) => {
+const Form= React.forwardRef<any,IFormProps>(({ 
+    children, 
+    component: Component = "form" as any, 
+    onFinish, 
+    onValuesChange,
+validateMessages,
+validateTrigger=[]
+ }, ref) => {
 
 
     // useImperativeHandle(
@@ -53,7 +60,7 @@ const Form= React.forwardRef<any,IFormProps>(({ children, component: Component =
         return baseStore
     }
     const wrapperNode = (
-        <Provider value={disposer(formState)}>{children}</Provider>
+        <Provider value={{store:disposer(formState),validateTrigger}}>{children}</Provider>
     );
 
     if (Component === false) {
