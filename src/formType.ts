@@ -5,9 +5,11 @@ import { Rule, ValidateMessages } from "./interface"
 import { validateRule } from "./validateUtils"
 
 export const FormStore = types.model("Form", {
-    fields: types.optional(types.map(FieldStore), {})
-
+    fields: types.optional(types.map(FieldStore), {}),
+    listFields:types.optional(types.map(types.array(types.map(FieldStore))),{})
 }).actions((self) => ({
+
+    // normal fields
     registerField(data) {
         self.fields.put(data)
     },
@@ -25,11 +27,11 @@ export const FormStore = types.model("Form", {
     reset() {
         self.fields.forEach(item => item.reset())
     },
-    validateFields(field: string, rules: Rule) {
+    validateFields(field: string, rules: Rule,newVali?:ValidateMessages) {
         const cur = self.fields.get(field)
         if (cur) {
             self.fields.set(field, { ...cur, validating: true })
-            const newVali = getEnv(self).validateMessages
+         
             if (!rules) {
                 return
             }
@@ -40,9 +42,26 @@ export const FormStore = types.model("Form", {
                 self.fields.set(field, { ...cur, validating: false, error: e })
             })
         }
-    }
+    },
+
+    // list field
+    registerIntoList(name:string,value?:any){
+        self.listFields.set(name,value||[])
+    },
+
+    registerValue(name:string,value:any,index:number){
+        const cur=self.listFields.get(name)
+        if(index>=0&&index<=cur.length){
+            const newList=[...cur.slice(0,index),value,...cur.slice(index)]
+
+        }
+    },
+
+
+   
 
 })).views((self) => ({
+    // normal fields
     getFieldValue(name: string) {
         return self.fields.get(name)?.value
     },
@@ -64,4 +83,15 @@ export const FormStore = types.model("Form", {
     hasField(name: string) {
         return self.fields.has(name)
     },
+
+    // list fields
+    getOneSet(name:string,index:number){
+        return self.fields.get(name)[index]
+    },
+
+    hasList(name:string){
+        return self.fields.has(name)
+    }
+
+
 }))
