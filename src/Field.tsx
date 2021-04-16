@@ -30,7 +30,8 @@ export interface IField {
     valuePropName?: string
     getValueFromEvents?: (...args: any) => any
     // renderer:React.ReactNode
-    rules: RuleObject
+    rules: RuleObject,
+    isListField?:boolean
 }
 
 const Field: React.FC<IField> = observer(({
@@ -41,9 +42,10 @@ const Field: React.FC<IField> = observer(({
     defaultValue = "",
     getValueFromEvents,
     validateTrigger,
-    rules
+    rules,
+    isListField=false
 }) => {
-    const { store, validateTrigger: RootTrigger } = useMst()
+    const { store, validateTrigger: RootTrigger,validateMessage ={}} = useMst()
 
     useEffect(() => {
 
@@ -91,7 +93,7 @@ const Field: React.FC<IField> = observer(({
         const mergedGetValueProps = ((val) => ({ [valuePropName]: val }));
         const control = {
             ...childProps,
-            ...mergedGetValueProps(store.getFieldValue ? store.getFieldValue(name) : defaultValue),
+            ...mergedGetValueProps(store.hasField(name) ? store.getFieldValue(name) : defaultValue),
 
         };
         control[trigger] = (...args: any) => {
@@ -121,7 +123,7 @@ const Field: React.FC<IField> = observer(({
                 if (rules) {
                     // We dispatch validate to root,
                     // since it will update related data with other field with same name
-                    store.validateFields(name, rules)
+                    store.validateFields(name, rules,validateMessage)
                 }
             };
         })
