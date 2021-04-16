@@ -12,7 +12,7 @@ export interface Store {
 export interface Meta {
     touched?: boolean;
     validating: boolean;
-    errors: string;
+    errors: string[];
     name?: InternalNamePath;
     submitting?: boolean;
 }
@@ -247,4 +247,6 @@ export interface ValidateMessages {
         mismatch?: ValidateMessage;
     };
 }
+
+export type ValidateTriggerType='onChange'|'onBlur'
 
