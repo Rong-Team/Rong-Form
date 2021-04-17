@@ -24,8 +24,7 @@ export const Provider = RootStoreContext.Provider;
 
 
 export type ListFormType={
-    store:any
-    addToStore:(val:any)=>any,
+    name:string
 
 }
 
