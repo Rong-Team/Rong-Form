@@ -10,6 +10,7 @@ export const FieldStore = types.model("field", {
 
     value: types.maybeNull(types.string),
     error: types.maybeNull(types.array(types.string)),
+    defaultValue: types.maybeNull(types.string),
     validating: types.optional(types.boolean, false)
 
 }).actions((self) => ({
@@ -31,7 +32,8 @@ export interface IField {
     getValueFromEvents?: (...args: any) => any
     // renderer:React.ReactNode
     rules: RuleObject,
-    isListField?:boolean
+    isListField?: boolean,
+    initialValue?: string
 }
 
 const Field: React.FC<IField> = observer(({
@@ -43,16 +45,17 @@ const Field: React.FC<IField> = observer(({
     getValueFromEvents,
     validateTrigger,
     rules,
-    isListField=false
+    isListField = false,
+    initialValue
 }) => {
-    const { store, validateTrigger: RootTrigger,validateMessage ={}} = useMst()
+    const { store, validateTrigger: RootTrigger, validateMessage = {} } = useMst()
 
     useEffect(() => {
 
         if (!name) {
             warning(false, "No Name provided")
         } else if (name && !store.hasField(name)) {
-            store.registerField({ name, value: defaultValue })
+            store.registerField({ name, value: initialValue || defaultValue ,defaultValue})
         } else {
             warning(false, "Duplicated Name in form")
         }
@@ -123,7 +126,7 @@ const Field: React.FC<IField> = observer(({
                 if (rules) {
                     // We dispatch validate to root,
                     // since it will update related data with other field with same name
-                    store.validateFields(name, rules,validateMessage)
+                    store.validateFields(name, rules, validateMessage)
                 }
             };
         })
