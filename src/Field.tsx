@@ -23,7 +23,7 @@ export const FieldStore = types.model("field", {
 }))
 
 export interface IField {
-    name: string
+    name: string |string[]
     defaultValue?: string
     trigger?: string,
     validateTrigger?: ValidateTriggerType[]
@@ -50,24 +50,31 @@ const Field: React.FC<IField> = observer(({
 }) => {
     const { store, validateTrigger: RootTrigger, validateMessage = {} } = useMst()
 
-    useEffect(() => {
 
+
+    useEffect(() => {
+        if (!isListField) {
+            // when 
+            if (name && typeof name === 'string' && !store.hasField(name)) {
+                store.registerField({ name, value: initialValue || defaultValue, defaultValue })
+            } else {
+                warning(false, "Duplicated Name in form")
+            }
+        } 
         if (!name) {
             warning(false, "No Name provided")
-        } else if (name && !store.hasField(name)) {
-            store.registerField({ name, value: initialValue || defaultValue ,defaultValue})
-        } else {
-            warning(false, "Duplicated Name in form")
+
+           
         }
         return () => {
-            if (name && store.hasField(name)) {
+            if (typeof name === 'string' && name && store.hasField(name)) {
                 store.dropField(name)
             }
         }
     }, [])
 
     const getMeta = () => {
-        const data = store.getFieldByName(name)
+        const data = store.getFieldByName(name as string)
         return {
             errors: data.error,
             validating: data.validating,
@@ -94,11 +101,20 @@ const Field: React.FC<IField> = observer(({
     const getControlled: any = (childProps: { [name: string]: any }) => {
         const originTriggerFunc: any = childProps[trigger];
         const mergedGetValueProps = ((val) => ({ [valuePropName]: val }));
-        const control = {
-            ...childProps,
-            ...mergedGetValueProps(store.hasField(name) ? store.getFieldValue(name) : defaultValue),
-
-        };
+        let control
+        // not list item
+        if(!isListField){
+           control= {
+                ...childProps,
+                ...mergedGetValueProps(store.hasField(name as string) ? store.getFieldValue(name as string) : defaultValue),
+    
+            };
+        }else{
+            control= {
+                ...childProps,
+                ...mergedGetValueProps(store.get)
+            }
+        }
         control[trigger] = (...args: any) => {
             let newValue
             if (getValueFromEvents) {
