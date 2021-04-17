@@ -1,6 +1,6 @@
 import React from "react";
 import { useEffect } from "react";
-import { useMst } from "./context";
+import { ListStoreContext, useMst } from "./context";
 import { Meta, NamePath, ValidatorRule } from "./interface";
 import { warning } from "./utils";
 
@@ -89,7 +89,7 @@ const List: React.FC<ListProps> = (props) => {
         }
     }
 
-    return (<>{
+    return (<ListStoreContext.Provider value={{name}}>{
         children(store.getListData(name).map((item, index) => {
             let key = keyManager.keys[index];
             if (key === undefined) {
@@ -101,10 +101,10 @@ const List: React.FC<ListProps> = (props) => {
                 return item.get(each).error
             })
             return {
-                errors, name, isListField: true, fieldKey: key
+                errors, name:key, isListField: true,
             }
         }), Operations)
-    }</>)
+    }</ListStoreContext.Provider>)
 
 }
 
