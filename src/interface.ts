@@ -5,9 +5,7 @@ import { ReactElement, ReducerAction } from 'react';
 export type InternalNamePath = (string | number)[];
 export type NamePath = string | number | InternalNamePath;
 
-export interface Store {
-    [name: string]: any;
-}
+
 
 export interface Meta {
     touched?: boolean;
@@ -26,10 +24,7 @@ export interface FieldData extends Partial<Omit<InternalFieldData, 'name'>> {
     name: NamePath;
 }
 export interface FieldEntity {
-    onStoreChange: (
-        store: Store,
-        namePathList: InternalNamePath[] | null,
-    ) => void;
+ 
     isFieldTouched: () => boolean;
     isFieldDirty: () => boolean;
     isFieldValidating: () => boolean;
@@ -92,7 +87,7 @@ export interface InternalHooks {
     initEntityValue: (entity: FieldEntity) => void;
     registerField: (entity: FieldEntity) => () => void;
     useSubscribe: (subscribable: boolean) => void;
-    setInitialValues: (values: Store, init: boolean) => void;
+   
     setCallbacks: (callbacks: Callbacks) => void;
     getFields: (namePathList?: InternalNamePath[]) => FieldData[];
     setValidateMessages: (validateMessages: ValidateMessages) => void;
@@ -250,3 +245,11 @@ export interface ValidateMessages {
 
 export type ValidateTriggerType='onChange'|'onBlur'
 
+
+export interface IFieldStore {
+    name:string
+    value:string
+    defaultValue?:string
+    error?:boolean
+    validating?:boolean
+}
