@@ -54,7 +54,7 @@ export const FormStore = types.model("Form", {
     },
 
     // register on form 
-    registerIntoList(name: string, value?: any[]) {
+    registerFromForm(name: string, value?: any[]) {
         let data: any[]
         let type = ['1'] // default set one item in list's index
         value.map((item, index) => {
@@ -76,14 +76,14 @@ export const FormStore = types.model("Form", {
         self.listFields.set(name, { data, name, type })
     },
 
-    registerFromField(name:string[]){
-        let list=self.listFields.get(name[0])
-        if(name.length===1&&list.type.length===0){
-            self.listFields.set(name[0],{...list,type:["1"] as any})
-        }else if(name.length===2){
-            let {type}=list
-            let newtype:any=[...type,name[1]]
-            self.listFields.set(name[0],{...list,type:newtype})
+    registerFromField(name: string[]) {
+        let list = self.listFields.get(name[0])
+        if (name.length === 1 && list.type.length === 0) {
+            self.listFields.set(name[0], { ...list, type: ["1"] as any })
+        } else if (name.length === 2) {
+            let { type } = list
+            let newtype: any = [...type, name[1]]
+            self.listFields.set(name[0], { ...list, type: newtype })
         }
     },
 
@@ -116,13 +116,17 @@ export const FormStore = types.model("Form", {
         }
     },
 
-    addListValue(name: string, values?: any,index?:number) {
+    // add value to list
+    addListValue(name: string, values?: any, index?: number) {
         const list = self.listFields.get(name)
+        let dataSet = list.data
+        let newValue
+        let newList
         if (list.type.length === 1) {
             let cname = Date.now()
-            let newValue: any = { [cname]: { name: cname, value: values, error: null } }
-            const newList = [...list.data, newValue]
-            self.listFields.set(name[0], { ...list, data: newList })
+            newValue = { [cname]: { name: cname, value: values, error: null } }
+
+
         } else if (list.type.length > 1) {
             let a = {}
             if (values) {
@@ -134,13 +138,18 @@ export const FormStore = types.model("Form", {
                     a[item] = { name: item, value: null, error: null }
                 })
             }
-            const newList = [...list.data, a]
-            self.listFields.set(name, { ...list, data: newList })
+            newValue = a
         }
+        if (!index || index >= dataSet.length) {
+            newList = [...list.data, newValue]
+        } else {
+            newList = [...dataSet.slice(0, index), newValue, ...dataSet.slice(index)]
+        }
+        self.listFields.set(name[0], { ...list, data: newList })
     },
 
-
-    removeSet(name: string, index: number) {
+    // remove value from list
+    removeListValue(name: string, index: number) {
         const cur = self.listFields.get(name)
         let dataSet = cur.data
         const newList: any = [...dataSet.slice(0, index), ...dataSet.slice(index + 1)]
@@ -186,7 +195,7 @@ export const FormStore = types.model("Form", {
         return self.listFields.get(name).data.length
     },
 
-    getDataType(name:string) {
+    getDataType(name: string) {
         return self.listFields.get(name).type
     }
 
