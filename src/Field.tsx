@@ -1,9 +1,9 @@
 import { types, } from 'mobx-state-tree'
 import { inject, observer, } from 'mobx-react'
-import React, { Component, useEffect } from 'react'
+import React, { Component, useContext, useEffect } from 'react'
 import { defaultGetValueFromEvent, toArray, toArray as toChildrenArray, warning } from './utils'
 import { Meta, NamePath, Rule, RuleObject, ValidateTriggerType } from './interface'
-import { useMst } from './context'
+import { ListStoreContext, useMst } from './context'
 
 export const FieldStore = types.model("field", {
     name: types.identifier,
@@ -23,7 +23,7 @@ export const FieldStore = types.model("field", {
 }))
 
 export interface IField {
-    name: string |string[]
+    name: string | string[]
     defaultValue?: string
     trigger?: string,
     validateTrigger?: ValidateTriggerType[]
@@ -50,9 +50,15 @@ const Field: React.FC<IField> = observer(({
 }) => {
     const { store, validateTrigger: RootTrigger, validateMessage = {} } = useMst()
 
-
+    const { name: listName } = useContext(ListStoreContext)
 
     useEffect(() => {
+        if (!name) {
+            warning(false, "No Name provided")
+
+
+        }
+        // register field into form
         if (!isListField) {
             // when 
             if (name && typeof name === 'string' && !store.hasField(name)) {
@@ -60,12 +66,21 @@ const Field: React.FC<IField> = observer(({
             } else {
                 warning(false, "Duplicated Name in form")
             }
-        } 
-        if (!name) {
-            warning(false, "No Name provided")
+            // register type into list form
+        } else if (Array.isArray(name)) {
+            const type = store.getDataType(name[0])
+            if (name.length === 2) {
+                if (type.indexOf(name[1]) === -1) {
+                    store.registerFromField([listName, name[1]])
+                }
+            } else if (name.length === 1) {
+                if (!type) {
+                    store.registerFromField([listName,])
+                }
+            }
 
-           
         }
+
         return () => {
             if (typeof name === 'string' && name && store.hasField(name)) {
                 store.dropField(name)
@@ -103,14 +118,14 @@ const Field: React.FC<IField> = observer(({
         const mergedGetValueProps = ((val) => ({ [valuePropName]: val }));
         let control
         // not list item
-        if(!isListField){
-           control= {
+        if (!isListField) {
+            control = {
                 ...childProps,
                 ...mergedGetValueProps(store.hasField(name as string) ? store.getFieldValue(name as string) : defaultValue),
-    
+
             };
-        }else{
-            control= {
+        } else {
+            control = {
                 ...childProps,
                 ...mergedGetValueProps(store.get)
             }
