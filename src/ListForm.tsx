@@ -28,10 +28,17 @@ const List: React.FC<ListProps> = ({
         warning(false, 'Form.List only accepts function as children.');
         return null;
     }
+
+    let datatype
+
+    const initData=()=>{
+        if(initialValue)
+    }
+
     
     const Operations:ListOperations={
         add:(defaultValue:any,index?:number)=>{
-
+            
         }
     }
 }
