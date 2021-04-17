@@ -7,7 +7,7 @@ import { validateRule } from "./validateUtils"
 
 export const ListFormStore = types.model({
     name: types.identifier,
-    data: types.optional(types.array(types.map(FieldStore)), []), // [[{name,a}]]
+    data: types.optional(types.array(types.map(FieldStore)), []), // [{name:FieldStore,name2:FieldStore}]
     type: types.optional(types.array(types.string), [])
 })
 
@@ -85,6 +85,11 @@ export const FormStore = types.model("Form", {
             let newtype: any = [...type, name[1]]
             self.listFields.set(name[0], { ...list, type: newtype })
         }
+    },
+    // when no initialValue found from list form, must init the start set of value
+    registerInit(name:string){
+        let list = self.listFields.get(name)
+        self.listFields.set(name,{...list,data:[{init:null}]})
     },
 
 
@@ -197,8 +202,11 @@ export const FormStore = types.model("Form", {
 
     getDataType(name: string) {
         return self.listFields.get(name).type
-    }
+    },
 
+   getListData(name:string){
+       return self.listFields.get(name).data
+   }
 
 
 
