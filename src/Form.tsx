@@ -71,7 +71,7 @@ validateTrigger=[]
         onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
             e.preventDefault();
             e.stopPropagation();
-            onFinish(getSnapshot(formState, true))
+            onFinish&&onFinish(getSnapshot(formState, true))
 
         }}
         onReset={(event: React.FormEvent<HTMLFormElement>) => {
