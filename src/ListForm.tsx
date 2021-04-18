@@ -1,3 +1,4 @@
+import { observer } from "mobx-react";
 import React from "react";
 import { useEffect } from "react";
 import { ListStoreContext, useMst } from "./context";
@@ -22,7 +23,7 @@ export interface ListProps {
     ) => JSX.Element | React.ReactNode;
 }
 
-const List: React.FC<ListProps> = (props) => {
+const List: React.FC<ListProps> = observer((props) => {
     const {
         children,
         validateTrigger,
@@ -42,10 +43,11 @@ const List: React.FC<ListProps> = (props) => {
     const keyManager = keyRef.current;
 
     const initData = () => {
-        if (!Array.isArray(initialValue)) {
-            return warning(false, "initialValue should be array")
-        }
+
         if (initialValue) {
+            if (!Array.isArray(initialValue)) {
+                return warning(false, "initialValue should be array")
+            }
             store.registerFromForm(name, initialValue)
         } else {
             store.registerInit(name)
@@ -88,24 +90,32 @@ const List: React.FC<ListProps> = (props) => {
             store.removeListValue(name, index)
         }
     }
+    const mapData = () => {
+        let dataSet = store.getListData(name)
 
-    return (<ListStoreContext.Provider value={{name}}>{
-        children(store.getListData(name).map((item, index) => {
-            let key = keyManager.keys[index];
-            if (key === undefined) {
-                keyManager.keys[index] = keyManager.id;
-                key = keyManager.keys[index];
-                keyManager.id += 1;
-            }
-            let errors = Object.keys(item).map(each => {
-                return item.get(each).error
+        if (dataSet) {
+            return dataSet.map((item, index) => {
+
+                let key = keyManager.keys[index];
+                if (key === undefined) {
+                    keyManager.keys[index] = keyManager.id;
+                    key = keyManager.keys[index];
+                    keyManager.id += 1;
+                }
+                let errors = Object.keys(item.toJSON()).map(each => {
+                    return item.get(each)?.error
+                })
+                return {
+                    errors, name: key, isListField: true,
+                }
             })
-            return {
-                errors, name:key, isListField: true,
-            }
-        }), Operations)
+        }
+        return []
+    }
+    return (<ListStoreContext.Provider value={{ name }}>{
+        children(mapData(), Operations)
     }</ListStoreContext.Provider>)
 
-}
+})
 
 export default List
