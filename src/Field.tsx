@@ -48,18 +48,20 @@ const Field: React.FC<IField> = observer(({
     isListField = false,
     initialValue
 }) => {
-    if (!name) {
-        warning(false, "No Name provided")
-        return <></>
 
-    }
     const { store, validateTrigger: RootTrigger, validateMessage = {} } = useMst()
 
     const list = useContext(ListStoreContext)
     let listName = list?.name || null
 
     useEffect(() => {
+      
+        if (!!!name) {
+           
+            warning(false, "No Name provided")
 
+
+        }
         // register field into form
         if (!isListField) {
             // when 
@@ -127,12 +129,19 @@ const Field: React.FC<IField> = observer(({
 
             };
         } else {
-            const valueSet = store.getOneSet(listName, Number(name[0]))
-            let value
+           
+            let value=""
+           
             if (name.length === 2) {
+                let valueSet = store.getOneSet(listName, Number(name[0]))
+            
                 value = valueSet[name[1]]?.value
             } else {
-                value = valueSet.values()[0]?.value
+                const valueSet = store.getOneSet(listName, Number(name))
+               
+               
+                value =  Object.values(valueSet)[0]?.value
+                
             }
             control = {
                 ...childProps,
@@ -150,7 +159,7 @@ const Field: React.FC<IField> = observer(({
                 if (name.length === 2) {
                     store.changeListValue([listName, name[1]], { value: newValue }, Number(name[0]))
                 } else {
-                    store.changeListValue([listName], { value: newValue }, Number(name[0]))
+                    store.changeListValue([listName], { value: newValue }, Number(name))
                 }
             } else {
                 store.setField(name as string, newValue)
