@@ -14,11 +14,11 @@ import { Callbacks, Rule, ValidateMessages, ValidateTriggerType } from "./interf
 export interface IFormProps {
     initialValues?: { [name: string]: any },
     children?: React.ReactNode
-    component: false | string | React.FC<any>,
+    component?: false | string | React.FC<any>,
     name?: string
-    onValuesChange: Callbacks<any>['onValuesChange']
-    onFieldsChange: Callbacks<any>['onFieldsChange']
-    onFinish: Callbacks<any>['onFinish']
+    onValuesChange?: Callbacks<any>['onValuesChange']
+    onFieldsChange?: Callbacks<any>['onFieldsChange']
+    onFinish?: Callbacks<any>['onFinish']
     validateMessages?:ValidateMessages
     validateTrigger?:ValidateTriggerType[]
 }
