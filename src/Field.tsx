@@ -31,7 +31,7 @@ export interface IField {
     valuePropName?: string
     getValueFromEvents?: (...args: any) => any
     // renderer:React.ReactNode
-    rules: RuleObject,
+    rules?: RuleObject,
     isListField?: boolean,
     initialValue?: string
 }
@@ -48,16 +48,18 @@ const Field: React.FC<IField> = observer(({
     isListField = false,
     initialValue
 }) => {
+    if (!name) {
+        warning(false, "No Name provided")
+        return <></>
+
+    }
     const { store, validateTrigger: RootTrigger, validateMessage = {} } = useMst()
 
-    const { name: listName } = useContext(ListStoreContext)
+    const list = useContext(ListStoreContext)
+    let listName = list?.name || null
 
     useEffect(() => {
-        if (!name) {
-            warning(false, "No Name provided")
 
-
-        }
         // register field into form
         if (!isListField) {
             // when 
@@ -125,9 +127,16 @@ const Field: React.FC<IField> = observer(({
 
             };
         } else {
+            const valueSet = store.getOneSet(listName, Number(name[0]))
+            let value
+            if (name.length === 2) {
+                value = valueSet[name[1]]?.value
+            } else {
+                value = valueSet.values()[0]?.value
+            }
             control = {
                 ...childProps,
-                ...mergedGetValueProps(store.get)
+                ...mergedGetValueProps(value || "")
             }
         }
         control[trigger] = (...args: any) => {
@@ -137,7 +146,15 @@ const Field: React.FC<IField> = observer(({
             } else {
                 newValue = defaultGetValueFromEvent(valuePropName, ...args)
             }
-            store.setField(name, newValue)
+            if (isListField) {
+                if (name.length === 2) {
+                    store.changeListValue([listName, name[1]], { value: newValue }, Number(name[0]))
+                } else {
+                    store.changeListValue([listName], { value: newValue }, Number(name[0]))
+                }
+            } else {
+                store.setField(name as string, newValue)
+            }
 
             if (originTriggerFunc) {
                 originTriggerFunc(...args)
@@ -154,10 +171,13 @@ const Field: React.FC<IField> = observer(({
 
                 // Always use latest rules
 
-                if (rules) {
-                    // We dispatch validate to root,
-                    // since it will update related data with other field with same name
-                    store.validateFields(name, rules, validateMessage)
+                if (!isListField) {
+                    if (rules) {
+
+                        store.validateFields(name as string, rules, validateMessage)
+                    }
+                } else {
+
                 }
             };
         })
