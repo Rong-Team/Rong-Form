@@ -1,5 +1,5 @@
 <br/>
-<p align="center"><img  src="https://github.com/TingzhouJia/Rong/raw/master/rform.png"/></p>
+<p align="center"><img  src="https://github.com/TingzhouJia/RForm/blob/main/rform.png"/></p>
 
 <h1 align="center">Rong Form</h1>
 
