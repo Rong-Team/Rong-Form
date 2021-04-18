@@ -9,7 +9,7 @@ export const ListFormStore = types.model({
     name: types.identifier,
     data: types.optional(types.array(types.map(FieldStore)), []), // [{name:FieldStore,name2:FieldStore}]
     type: types.optional(types.array(types.string), []),
-   
+
 })
 
 
@@ -60,7 +60,7 @@ export const FormStore = types.model("Form", {
         let type = ['1'] // default set one item in list's index
         value.map((item, index) => {
             if (typeof item !== 'object') {
-                data.push({ [index]: { name:index, validating: false, value: item, error: null } })
+                data.push({ [index]: { name: index, validating: false, value: item, error: null } })
             } else {
                 let cur: { [name: string]: IFieldStore }
                 Object.keys(item).map(each => {
@@ -82,7 +82,7 @@ export const FormStore = types.model("Form", {
         // single field 
         if (name.length === 1 && list.type.length === 0) {
             self.listFields.set(name[0], { ...list, type: ["1"] as any })
-        // multiple
+            // multiple
         } else if (name.length === 2) {
             let { type } = list
             let newtype: any = [...type, name[1]]
@@ -90,9 +90,10 @@ export const FormStore = types.model("Form", {
         }
     },
     // when no initialValue found from list form, must init the start set of value
-    registerInit(name:string){
+    registerInit(name: string) {
         let list = self.listFields.get(name)
-        self.listFields.set(name,{...list,data:[{init:null}]})
+        self.listFields.set(name, { ...list, name, data: [{ "init": {name:"init",value:null} }],type:['1'] })
+        
     },
 
 
@@ -116,10 +117,14 @@ export const FormStore = types.model("Form", {
             const cur = self.listFields.get(name[0]) // get parent list
             let dataSet = cur.data
             if (index >= 0 && index <= dataSet.length) {
-                let beforeVal = dataSet[index]
+                let before = dataSet[index] // {init:FieldStore}
+                let beforeVal=Object.values(before.toJSON())[0]
+                
                 let newVal = { ...beforeVal, ...value }
-                const newList: any = [...dataSet.slice(0, index), newVal, ...dataSet.slice(index + 1)]
-                self.listFields.set(name[0], newList)
+               
+                const newList: any = [...dataSet.slice(0, index), {[newVal.name]:newVal}, ...dataSet.slice(index + 1)]
+               
+                self.listFields.set(name[0], {...cur,data:newList})
             }
         }
     },
@@ -130,8 +135,9 @@ export const FormStore = types.model("Form", {
         let dataSet = list.data
         let newValue
         let newList
+      
         if (list.type.length === 1) {
-           
+
             newValue = { [name]: { name: name, value: values, error: null } }
 
         } else if (list.type.length > 1) {
@@ -190,9 +196,7 @@ export const FormStore = types.model("Form", {
     },
 
     // list fields
-    getOneSet(name: string, index: number) {
-        return self.listFields.get(name)[index]
-    },
+ 
 
     hasList(name: string) {
         return self.listFields.has(name)
@@ -206,9 +210,12 @@ export const FormStore = types.model("Form", {
         return self.listFields.get(name).type
     },
 
-   getListData(name:string){
-       return self.listFields.get(name).data
-   }
+    getListData(name: string) {
+        return self.listFields.get(name)?.data
+    },
+    getOneSet(name: string, index: number) {
+        return self.listFields.get(name)?.data[index]?.toJSON()
+    },
 
 
 
