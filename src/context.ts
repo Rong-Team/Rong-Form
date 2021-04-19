@@ -25,7 +25,8 @@ export const Provider = RootStoreContext.Provider;
 
 export type ListFormType={
     name:string
-
+    id:number,
+    register:(index:number)=>void
 }
 
 export const ListStoreContext=createContext<ListFormType>(null)
