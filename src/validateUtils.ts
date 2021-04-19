@@ -50,8 +50,10 @@ function convertMessages(
 
 // validate one rule
 export async function validateRule(name: string, value: any, rule: RuleObject, options: ValidateOptions,
-    messageVariables?: Record<string, string>,) {
+    messageVariables?: Record<string, string>,):Promise<string[]> {
+    
     const cloneRule = { ...rule };
+    console.log()
     // We should special handle array validate
     let subRuleField: RuleObject = null;
     if (cloneRule && cloneRule.type === 'array' && cloneRule.defaultField) {
@@ -60,7 +62,7 @@ export async function validateRule(name: string, value: any, rule: RuleObject, o
     }
 
     const validator = new AsyncValidator({
-        [name]: [cloneRule],
+        [name]: [Object.values(cloneRule)[0]],
     });
     const messages: ValidateMessages = convertMessages(
         options.validateMessages,
@@ -70,9 +72,7 @@ export async function validateRule(name: string, value: any, rule: RuleObject, o
     );
     validator.messages(messages);
     let result = []
-    try {
-        await Promise.resolve(validator.validate({ [name]: value }, { ...options }));
-    } catch (errObj) {
+    return validator.validate({ [name]: value }, { ...options }).then(()=>{return result}).catch((errObj)=>{
         if (errObj.errors) {
             result = errObj.errors.map(({ message }, index) =>
                 // Wrap ReactNode with `key`
@@ -84,16 +84,18 @@ export async function validateRule(name: string, value: any, rule: RuleObject, o
             console.error(errObj);
             result = [(messages.default as () => string)()];
         }
-    }
-    if (!result.length && subRuleField) {
-        const subResults: string[][] = await Promise.all(
-            (value as any[]).map((subValue: any, i: number) =>
-                validateRule(`${name}.${i}`, subValue, subRuleField, options, messageVariables),
-            ),
-        );
+        return result
+    })
+   
+    // if (!result.length && subRuleField) {
+    //     const subResults: string[][] = await Promise.all(
+    //         (value as any[]).map((subValue: any, i: number) =>
+    //             validateRule(`${name}.${i}`, subValue, subRuleField, options, messageVariables),
+    //         ),
+    //     );
 
-        return subResults.reduce((prev, errors) => [...prev, ...errors], []);
-    }
+    //     return subResults.reduce((prev, errors) => [...prev, ...errors], []);
+    // }
 
-    return result;
+    // return result;
 }
