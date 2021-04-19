@@ -43,7 +43,7 @@ const Field: React.FC<IField> = observer(({
     valuePropName = "value",
     defaultValue = "",
     getValueFromEvents,
-    validateTrigger,
+    validateTrigger=["onChange"],
     rules,
     isListField = false,
     initialValue
@@ -55,13 +55,8 @@ const Field: React.FC<IField> = observer(({
     let listName = list?.name || null
 
     useEffect(() => {
-      
-        if (!!!name) {
-           
-            warning(false, "No Name provided")
 
-
-        }
+       
         // register field into form
         if (!isListField) {
             // when 
@@ -129,19 +124,21 @@ const Field: React.FC<IField> = observer(({
 
             };
         } else {
-           
-            let value=""
-           
+
+            let value = ""
+
             if (name.length === 2) {
                 let valueSet = store.getOneSet(listName, Number(name[0]))
-            
+
                 value = valueSet[name[1]]?.value
             } else {
                 const valueSet = store.getOneSet(listName, Number(name))
-               
-               
-                value =  Object.values(valueSet)[0]?.value
-                
+             
+                if (valueSet) {
+                    value = Object.values(valueSet)[0]?.value
+                   
+                }
+
             }
             control = {
                 ...childProps,
