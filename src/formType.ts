@@ -19,6 +19,17 @@ export const FormStore = types.model("Form", {
     // list1: [ {"first":FieldStore,"second":FieldStore } ]
 }).actions((self) => ({
 
+    initForm(data:{[name:string]:any}){
+        Object.keys(data).map(item=>{
+            const dataSet=data[item]
+            if(Array.isArray(dataSet)){
+
+            }else{
+                
+            }
+        })
+    },
+
     // normal fields
     registerField(data) {
         self.fields.put(data)
@@ -146,7 +157,8 @@ export const FormStore = types.model("Form", {
             let newVal = { ...beforeVal, ...value }
          
             dataSet.set(String(index), {[beforeKey]:newVal})
-            self.listFields.set(name[0], { ...cur, data: dataSet })
+            cur.data=dataSet
+            self.listFields.set(name[0], cur)
 
         }
     },
