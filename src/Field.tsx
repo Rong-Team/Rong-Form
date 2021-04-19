@@ -1,6 +1,6 @@
 import { types, } from 'mobx-state-tree'
 import { inject, observer, } from 'mobx-react'
-import React, { Component, useContext, useEffect } from 'react'
+import React, { Component, useContext, useEffect, useMemo } from 'react'
 import { defaultGetValueFromEvent, toArray, toArray as toChildrenArray, warning } from './utils'
 import { Meta, NamePath, Rule, RuleObject, ValidateTriggerType } from './interface'
 import { ListStoreContext, useMst } from './context'
@@ -68,9 +68,11 @@ const Field: React.FC<IField> = observer(({
             // register type into list form
         } else if (Array.isArray(name)) {
             const type = store.getDataType(name[0])
+            list?.register(Number(name[0]))
             if (name.length === 2) {
                 if (type.indexOf(name[1]) === -1) {
                     store.registerFromField([listName, name[1]])
+
                 }
             } else if (name.length === 1) {
                 if (!type) {
@@ -192,7 +194,8 @@ const Field: React.FC<IField> = observer(({
         return control
     }
 
-    const returnChild = () => {
+
+    const returnChild =  () => {
 
         let returnChildNode = null
         const { child, isFunction } = getOnlyChild(children);
