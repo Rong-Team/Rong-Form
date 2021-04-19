@@ -2,7 +2,7 @@ import { types, } from 'mobx-state-tree'
 import { inject, observer, } from 'mobx-react'
 import React, { Component, useContext, useEffect, useMemo } from 'react'
 import { defaultGetValueFromEvent, toArray, toArray as toChildrenArray, warning } from './utils'
-import { Meta, NamePath, Rule, RuleObject, ValidateTriggerType } from './interface'
+import { IFieldStore, Meta, NamePath, Rule, RuleObject, ValidateTriggerType } from './interface'
 import { ListStoreContext, useMst } from './context'
 
 export const FieldStore = types.model("field", {
@@ -33,7 +33,8 @@ export interface IField {
     // renderer:React.ReactNode
     rules?: RuleObject,
     isListField?: boolean,
-    initialValue?: string
+    initialValue?: string,
+    children:React.ReactNode|((dependencies: IFieldStore[],controls:any)=>React.ReactNode)
 }
 
 const Field: React.FC<IField> = observer(({
@@ -46,7 +47,8 @@ const Field: React.FC<IField> = observer(({
     validateTrigger=["onChange"],
     rules,
     isListField = false,
-    initialValue
+    initialValue,
+    dependencies
 }) => {
 
     const { store, validateTrigger: RootTrigger, validateMessage = {} } = useMst()
@@ -96,6 +98,14 @@ const Field: React.FC<IField> = observer(({
             validating: data.validating,
             name: [name]
         } as Meta
+    }
+
+    const handleDependencies=()=>{
+        if(dependencies){
+            return dependencies.map(item=>{
+                return store.getFieldByName( String(item))
+            })
+        }
     }
 
     const getOnlyChild = (children: React.ReactNode) => {
@@ -200,7 +210,7 @@ const Field: React.FC<IField> = observer(({
         let returnChildNode = null
         const { child, isFunction } = getOnlyChild(children);
         if (isFunction) {
-            returnChildNode = child;
+            return child(handleDependencies(),getControlled({}))
         } else if (React.isValidElement(child)) {
             returnChildNode = React.cloneElement(
                 child as React.ReactElement,
@@ -208,7 +218,7 @@ const Field: React.FC<IField> = observer(({
             );
         } else {
             returnChildNode = child
-            warning(false, "`renderer is not valid`")
+            warning(false, "`children is not valid`")
         }
 
         return returnChildNode as React.ReactNode
