@@ -43,7 +43,7 @@ export interface FieldEntity {
 }
 
 export interface FieldError {
-    name: InternalNamePath;
+    name: string;
     errors: string[];
 }
 type RecursivePartial<T> = T extends object
