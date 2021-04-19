@@ -17,7 +17,7 @@ export interface ListProps {
     validateTrigger?: string | string[] | false;
     initialValue?: any[];
     children?: (
-        fields: any[],
+        fields: {name:string,errors:string[],key:string,isListField:boolean}[],
         operations: ListOperations,
 
     ) => JSX.Element | React.ReactNode;
@@ -69,32 +69,35 @@ const List: React.FC<ListProps> = observer((props) => {
                 return
             } else if (index >= length || !index) {
                 keyManager.keys = [...keyManager.keys, keyManager.id];
-                store.addListValue(name, defaultValue)
+                store.addListValue(name, defaultValue, keyManager.id)
             } else if (index < length) {
                 keyManager.keys = [
                     ...keyManager.keys.slice(0, index),
                     keyManager.id,
                     ...keyManager.keys.slice(index),
                 ];
-                store.addListValue(name, defaultValue, index)
+                store.addListValue(name, defaultValue, keyManager.id)
 
             }
             keyManager.id += 1;
         },
         remove: (index: number) => {
-            const length = store.listLength(name)
-            if (index >= length) {
-                return warning(false, "Cannot delete outscoped value")
+            const removedIndex = keyManager.keys[index]
+            if (removedIndex === undefined) {
+                return warning(false, "Cannot remove undefined element")
             }
-            keyManager.keys = keyManager.keys.filter((_, keysIndex) => keysIndex === index);
-            store.removeListValue(name, index)
+
+            keyManager.keys = keyManager.keys.filter((i, keyIndex) => keyIndex !== index);
+            store.removeListValue(name, removedIndex)
         }
     }
     const mapData = () => {
         let dataSet = store.getListData(name)
 
         if (dataSet) {
-            return dataSet.map((item, index) => {
+            //console.log(dataSet.toJSON())
+            return Object.values(dataSet.toJSON()).map((item, index) => {
+
 
                 let key = keyManager.keys[index];
                 if (key === undefined) {
@@ -102,11 +105,15 @@ const List: React.FC<ListProps> = observer((props) => {
                     key = keyManager.keys[index];
                     keyManager.id += 1;
                 }
-                let errors = Object.keys(item.toJSON()).map(each => {
-                    return item.get(each)?.error
+
+
+                const errors = []
+                Object.values(item).map(each => {
+
+                    errors.push(each.error)
                 })
                 return {
-                    errors, name: key, isListField: true,
+                    errors, name: key, isListField: true, key
                 }
             })
         }
