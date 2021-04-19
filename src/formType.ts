@@ -2,7 +2,7 @@ import { getEnv, types ,flow} from "mobx-state-tree"
 
 import { defaultValidateMessages } from "./defaultValidateMessage"
 import { FieldStore } from "./Field"
-import { IFieldStore, Rule, ValidateMessages } from "./interface"
+import { FieldError, IFieldStore, Rule, ValidateMessages } from "./interface"
 import { validateRule } from "./validateUtils"
 
 export const ListFormStore = types.model({
@@ -61,6 +61,21 @@ export const FormStore = types.model("Form", {
         }
     }),
 
+    getFieldError(name:string){
+        const data=self.fields.get(name)
+        if(!data){
+            return undefined
+        }
+        return data.error.toJSON()
+    },
+    getFieldsError():FieldError[]{
+        return Object.keys(self.fields).map(item=>{
+            return {errors:self.fields.get(item).error.toJSON(),name:item}
+        })
+    },
+    isFieldValidating(name:string){
+        return self.fields.get(name)?.validating||false
+    },
     // register on form 
     registerFromForm(name: string, value?: any[]) {
         let data: {}
