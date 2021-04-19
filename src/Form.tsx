@@ -19,18 +19,18 @@ export interface IFormProps {
     onValuesChange?: Callbacks<any>['onValuesChange']
     onFieldsChange?: Callbacks<any>['onFieldsChange']
     onFinish?: Callbacks<any>['onFinish']
-    validateMessages?:ValidateMessages
-    validateTrigger?:ValidateTriggerType[]
+    validateMessages?: ValidateMessages
+    validateTrigger?: ValidateTriggerType[]
 }
 const formState = FormStore.create({ fields: {} },)
-const Form= React.forwardRef<any,IFormProps>(({ 
-    children, 
-    component: Component = "form" as any, 
-    onFinish, 
+const Form = React.forwardRef<any, IFormProps>(({
+    children,
+    component: Component = "form" as any,
+    onFinish,
     onValuesChange,
-validateMessages,
-validateTrigger=[]
- }, ref) => {
+    validateMessages,
+    validateTrigger = []
+}, ref) => {
 
 
     // useImperativeHandle(
@@ -44,15 +44,25 @@ validateTrigger=[]
     //     [],
     // )
 
-    const getValues=(args)=>{
-        return formState.getFieldKeys(args[0],args[1])
+    const getValues = (args) => {
+        return formState.getFieldKeys(args[0], args[1])
     }
+    // const getValueFromlist(args)=>{
+    //     return formState.getListValues(args[0],)
+    // }
     const disposer = (baseStore) => {
         if (onValuesChange) {
             addMiddleware(baseStore, (call, next, abort) => {
                 if (call.name === "setField") {
                     const args = call.args
                     onValuesChange({ [args[0]]: args[1] }, getValues(args))
+                } else if (call.name === "changeListValue") {
+                    const args = call.args
+                    const name = args[0]
+                    const value = args[1]["value"]
+                    if (name.length === 1) {
+                        //  onValuesChange(value,getValueFromlist())
+                    }
                 }
                 return next(call)
             })
@@ -60,7 +70,7 @@ validateTrigger=[]
         return baseStore
     }
     const wrapperNode = (
-        <Provider value={{store:disposer(formState),validateTrigger}}>{children}</Provider>
+        <Provider value={{ store: disposer(formState), validateTrigger }}>{children}</Provider>
     );
 
     if (Component === false) {
@@ -71,7 +81,7 @@ validateTrigger=[]
         onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
             e.preventDefault();
             e.stopPropagation();
-            onFinish&&onFinish(getSnapshot(formState, true))
+            onFinish && onFinish(getSnapshot(formState, true))
 
         }}
         onReset={(event: React.FormEvent<HTMLFormElement>) => {
