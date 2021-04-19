@@ -1,5 +1,5 @@
-import { getEnv, types } from "mobx-state-tree"
-import { Instance, string } from "mobx-state-tree/dist/internal"
+import { getEnv, types ,flow} from "mobx-state-tree"
+
 import { defaultValidateMessages } from "./defaultValidateMessage"
 import { FieldStore } from "./Field"
 import { IFieldStore, Rule, ValidateMessages } from "./interface"
@@ -7,7 +7,7 @@ import { validateRule } from "./validateUtils"
 
 export const ListFormStore = types.model({
     name: types.identifier,
-    data: types.optional(types.array(types.map(FieldStore)), []), // [{name:FieldStore,name2:FieldStore}]
+    data: types.optional(types.map(types.map(FieldStore)), {}), // {1: {name1:FieldStore,name2:FieldStore}}
     type: types.optional(types.array(types.string), []),
 
 })
@@ -37,36 +37,43 @@ export const FormStore = types.model("Form", {
     reset() {
         self.fields.forEach(item => item.reset())
     },
-    validateFields(field: string, rules: Rule, newVali?: ValidateMessages) {
+    validateFields:flow(function*(field: string, rules: Rule, newVali?: ValidateMessages){
         const cur = self.fields.get(field)
         if (cur) {
-            self.fields.set(field, { ...cur, validating: true })
+           
 
             if (!rules) {
                 return
             }
-            const promise = validateRule(field, cur.value, rules, { validateMessages: { ...defaultValidateMessages, ...newVali }, })
-            promise.then(() => {
-                self.fields.set(field, { ...cur, validating: false, error: null })
-            }).catch(e => {
-                self.fields.set(field, { ...cur, validating: false, error: e })
-            })
+            self.fields.set(field, { ...cur, validating: true })
+            const promise = yield validateRule(field, cur.value, rules, { validateMessages: { ...defaultValidateMessages, ...newVali }, })
+            self.fields.set(field, { ...cur, validating: false, error: promise })
+            // Promise.resolve(promise).then(()=>{
+            //     self.fields.set(field, { ...cur, validating: false, error: null })
+            // }).catch(e=>{
+            //     self.fields.set(field, { ...cur, validating: false, error: e })
+            // })
+            // promise.then(() => {
+            //     self.fields.set(field, { ...cur, validating: false, error: null })
+            // }).catch(e => {
+            //     self.fields.set(field, { ...cur, validating: false, error: e })
+            // })
         }
-    },
+    }),
 
     // register on form 
     registerFromForm(name: string, value?: any[]) {
-        let data: any[]
+        let data: {}
         let type = ['1'] // default set one item in list's index
         value.map((item, index) => {
             if (typeof item !== 'object') {
-                data.push({ [index]: { name: index, validating: false, value: item, error: null } })
+                data[index] = { [index]: { name: index, validating: false, value: item, error: null } }
             } else {
                 let cur: { [name: string]: IFieldStore }
                 Object.keys(item).map(each => {
                     cur[each] = { name: each, value: each[each], error: null }
                 })
-                data.push(cur)
+                data[index] = cur
             }
         })
         if (value.length > 0) {
@@ -92,8 +99,8 @@ export const FormStore = types.model("Form", {
     // when no initialValue found from list form, must init the start set of value
     registerInit(name: string) {
         let list = self.listFields.get(name)
-        self.listFields.set(name, { ...list, name, data: [{ "init": {name:"init",value:null} }],type:['1'] })
-        
+        self.listFields.set(name, { ...list, name, type: ["1"], data: { "0": { "0": { name: "0", value: null } } } })
+
     },
 
 
@@ -104,41 +111,41 @@ export const FormStore = types.model("Form", {
         if (name.length === 2) {
             const cur = self.listFields.get(name[0]) // get parent list
             let dataSet = cur.data
-            if (index >= 0 && index <= dataSet.length) {
-                let beforeValue = dataSet[index]
 
-                let replaced = beforeValue.get(name[1])
-                beforeValue.set(name[1], { ...replaced, ...value })
+            let beforeValue = dataSet.get(String(index))
 
-                const newList: any = [...dataSet.slice(0, index), beforeValue, ...dataSet.slice(index + 1)]
-                self.listFields.set(name[0], { ...cur, data: newList })
-            }
+            let replaced = beforeValue.get(name[1])
+            beforeValue.set(name[1], { ...replaced, ...value })
+            dataSet.set(String(index), beforeValue)
+
+            self.listFields.set(name[0], { ...cur, data: dataSet })
+
         } else if (name.length === 1) {
             const cur = self.listFields.get(name[0]) // get parent list
             let dataSet = cur.data
-            if (index >= 0 && index <= dataSet.length) {
-                let before = dataSet[index] // {init:FieldStore}
-                let beforeVal=Object.values(before.toJSON())[0]
-                
-                let newVal = { ...beforeVal, ...value }
-               
-                const newList: any = [...dataSet.slice(0, index), {[newVal.name]:newVal}, ...dataSet.slice(index + 1)]
-               
-                self.listFields.set(name[0], {...cur,data:newList})
-            }
+
+            let before = dataSet.get(String(index)) // {init:FieldStore}
+        
+            let beforeVal = Object.values(before.toJSON())[0]
+            let beforeKey=Object.keys(before.toJSON())[0]
+            let newVal = { ...beforeVal, ...value }
+         
+            dataSet.set(String(index), {[beforeKey]:newVal})
+            self.listFields.set(name[0], { ...cur, data: dataSet })
+
         }
     },
 
     // add value to list
     addListValue(name: string, values?: any, index?: number) {
         const list = self.listFields.get(name)
+        
         let dataSet = list.data
         let newValue
-        let newList
-      
+        let ind=String(index||dataSet.size)
         if (list.type.length === 1) {
 
-            newValue = { [name]: { name: name, value: values, error: null } }
+            newValue = { [ind]: { name: ind, value: values, error: null } }
 
         } else if (list.type.length > 1) {
             let a = {}
@@ -153,20 +160,17 @@ export const FormStore = types.model("Form", {
             }
             newValue = a
         }
-        if (!index || index >= dataSet.length) {
-            newList = [...list.data, newValue]
-        } else {
-            newList = [...dataSet.slice(0, index), newValue, ...dataSet.slice(index)]
-        }
-        self.listFields.set(name[0], { ...list, data: newList })
+        dataSet.set(ind, newValue)
+        self.listFields.set(name, { ...list, data: dataSet })
     },
 
     // remove value from list
     removeListValue(name: string, index: number) {
         const cur = self.listFields.get(name)
         let dataSet = cur.data
-        const newList: any = [...dataSet.slice(0, index), ...dataSet.slice(index + 1)]
-        self.listFields.set(name, { ...cur, data: newList })
+        dataSet.delete(String(index))
+      
+        self.listFields.set(name, { ...cur, data: dataSet })
     }
 
 
@@ -196,14 +200,14 @@ export const FormStore = types.model("Form", {
     },
 
     // list fields
- 
+
 
     hasList(name: string) {
         return self.listFields.has(name)
     },
 
     listLength(name: string) {
-        return self.listFields.get(name).data.length
+        return self.listFields.get(name).data.size
     },
 
     getDataType(name: string) {
@@ -214,9 +218,30 @@ export const FormStore = types.model("Form", {
         return self.listFields.get(name)?.data
     },
     getOneSet(name: string, index: number) {
-        return self.listFields.get(name)?.data[index]?.toJSON()
+        return self.listFields.get(name)?.data.get(String(index))?.toJSON()
     },
 
+    getListValues(name: string[], index: number, value: any) {
+        const dataSet = self.listFields.get(name[0]).data
+        let c = []
+        if (dataSet) { // dataset={0:{name:FieldStore,pwd:FieldStore}}
+            Object.values(dataSet).map(item => {
+                let a = {}
+                Object.values(item).map((each: any) => {
+                    if (Object.keys(item).length === 1) {
+                        c.push(each?.value)
+                    } else {
+                        a[each.name] = each.value
+                    }
+                })
+                if (Object.keys(item).length > 1) {
+                    c.push(a)
+                }
+            })
+            return { [name[0]]: c }
+        }
+
+    }
 
 
 }))
