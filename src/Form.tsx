@@ -1,19 +1,26 @@
 import { toJS } from "mobx";
 import { addMiddleware, getSnapshot, Instance, TypeOfValue, types } from "mobx-state-tree";
-import React, { useImperativeHandle } from "react";
+import React, { useImperativeHandle, useRef } from "react";
 import { Provider } from "./context";
 
 import { FieldStore } from "./Field";
 import { FormStore } from "./formType";
-import { Callbacks, Rule, ValidateMessages, ValidateTriggerType } from "./interface";
+import { Callbacks, FieldError, Rule, ValidateMessages, ValidateTriggerType } from "./interface";
 
 
 
-
+export interface FormInstance {
+    getFieldValue: (name: string) => string
+    getFieldsValue: () => { [name: string]: any }
+    getFieldError: (name: string) => string[]
+    getFieldsError: () => FieldError[]
+    isFieldValidating: (name: string) => boolean
+    submit: () => void
+}
 
 export interface IFormProps {
     initialValues?: { [name: string]: any },
-    children?: React.ReactNode
+    children?: React.ReactNode | ((form: FormInstance) => React.ReactNode),
     component?: false | string | React.FC<any>,
     name?: string
     onValuesChange?: Callbacks<any>['onValuesChange']
@@ -23,7 +30,7 @@ export interface IFormProps {
     validateTrigger?: ValidateTriggerType[]
 }
 const formState = FormStore.create({ fields: {} },)
-const Form = React.forwardRef<any, IFormProps>(({
+const Form = React.forwardRef<FormInstance, IFormProps>(({
     children,
     component: Component = "form" as any,
     onFinish,
@@ -32,17 +39,32 @@ const Form = React.forwardRef<any, IFormProps>(({
     validateTrigger = []
 }, ref) => {
 
+    const formRef = useRef<HTMLFormElement>()
 
-    // useImperativeHandle(
-    //     ref,
-    //     () => ({
-    //         getFieldValue(name:string){
-    //             return formState.getFieldValue(name)
-    //         },
-
-    //     }),
-    //     [],
-    // )
+    useImperativeHandle(
+        ref,
+        () => ({
+            getFieldValue(name: string) {
+                return formState.getFieldValue(name)
+            },
+            getFieldsValue() {
+                return getSnapshot(formState, true)
+            },
+            getFieldError(name: string) {
+                return formState.getFieldError(name)
+            },
+            getFieldsError() {
+                return formState.getFieldsError()
+            },
+            isFieldValidating(name: string) {
+                return formState.isFieldValidating(name)
+            },
+            submit() {
+                formRef.current.submit()
+            }
+        }),
+        [],
+    )
 
     const getValues = (args) => {
         return formState.getFieldKeys(args[0], args[1])
@@ -70,7 +92,7 @@ const Form = React.forwardRef<any, IFormProps>(({
         return baseStore
     }
     const wrapperNode = (
-        <Provider value={{ store: disposer(formState), validateTrigger }}>{children}</Provider>
+        <Provider value={{ store: disposer(formState), validateTrigger, validateMessage: validateMessages }}>{children}</Provider>
     );
 
     if (Component === false) {
@@ -78,6 +100,7 @@ const Form = React.forwardRef<any, IFormProps>(({
     }
 
     return <Component
+        ref={formRef}
         onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
             e.preventDefault();
             e.stopPropagation();
