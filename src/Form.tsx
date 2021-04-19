@@ -1,6 +1,6 @@
 import { toJS } from "mobx";
 import { addMiddleware, getSnapshot, Instance, TypeOfValue, types } from "mobx-state-tree";
-import React, { useImperativeHandle, useRef } from "react";
+import React, { useEffect, useImperativeHandle, useRef } from "react";
 import { Provider } from "./context";
 
 import { FieldStore } from "./Field";
@@ -36,7 +36,8 @@ const Form = React.forwardRef<FormInstance, IFormProps>(({
     onFinish,
     onValuesChange,
     validateMessages,
-    validateTrigger = []
+    validateTrigger = [],
+    initialValues
 }, ref) => {
 
     const formRef = useRef<HTMLFormElement>()
@@ -91,6 +92,20 @@ const Form = React.forwardRef<FormInstance, IFormProps>(({
         }
         return baseStore
     }
+
+    const init=()=>{
+        if(initialValues){
+            formState.initForm(initialValues)
+        }
+    }
+
+    useEffect(() => {
+        init()
+        return () => {
+            
+        }
+    }, [])
+
     const wrapperNode = (
         <Provider value={{ store: disposer(formState), validateTrigger, validateMessage: validateMessages }}>{children}</Provider>
     );
