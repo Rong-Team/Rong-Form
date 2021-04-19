@@ -1,5 +1,5 @@
 import { observer } from "mobx-react";
-import React from "react";
+import React, { useCallback, useState } from "react";
 import { useEffect } from "react";
 import { ListStoreContext, useMst } from "./context";
 import { Meta, NamePath, ValidatorRule } from "./interface";
@@ -17,7 +17,7 @@ export interface ListProps {
     validateTrigger?: string | string[] | false;
     initialValue?: any[];
     children?: (
-        fields: {name:string,errors:string[],key:string,isListField:boolean}[],
+        fields: { name: string,  key: string, isListField: boolean }[],
         operations: ListOperations,
 
     ) => JSX.Element | React.ReactNode;
@@ -40,6 +40,8 @@ const List: React.FC<ListProps> = observer((props) => {
         keys: [],
         id: 0,
     });
+    const [keys, setkeys] = useState([])
+    
     const keyManager = keyRef.current;
 
     const initData = () => {
@@ -48,10 +50,24 @@ const List: React.FC<ListProps> = observer((props) => {
             if (!Array.isArray(initialValue)) {
                 return warning(false, "initialValue should be array")
             }
+            initialValue.map((item, index) => {
+                let key = keyManager.keys[index];
+                if (key === undefined) {
+                    keyManager.keys[index] = keyManager.id;
+                    key = keyManager.keys[index];
+                    keyManager.id += 1;
+                }
+
+            })
+            
             store.registerFromForm(name, initialValue)
         } else {
+            keyManager.keys[0]=keyManager.id
+            keyManager.id+=1
             store.registerInit(name)
+           
         }
+        setkeys([2])
     }
     useEffect(() => {
         initData()
@@ -80,6 +96,7 @@ const List: React.FC<ListProps> = observer((props) => {
 
             }
             keyManager.id += 1;
+            setkeys([2])
         },
         remove: (index: number) => {
             const removedIndex = keyManager.keys[index]
@@ -89,39 +106,57 @@ const List: React.FC<ListProps> = observer((props) => {
 
             keyManager.keys = keyManager.keys.filter((i, keyIndex) => keyIndex !== index);
             store.removeListValue(name, removedIndex)
+            setkeys([2])
         }
     }
-    const mapData = () => {
-        let dataSet = store.getListData(name)
-
-        if (dataSet) {
-            //console.log(dataSet.toJSON())
-            return Object.values(dataSet.toJSON()).map((item, index) => {
-
-
-                let key = keyManager.keys[index];
-                if (key === undefined) {
-                    keyManager.keys[index] = keyManager.id;
-                    key = keyManager.keys[index];
-                    keyManager.id += 1;
-                }
-
-
-                const errors = []
-                Object.values(item).map(each => {
-
-                    errors.push(each.error)
-                })
-                return {
-                    errors, name: key, isListField: true, key
-                }
+    const mapData = useCallback(
+        () => {
+            // let dataSet = store.getListData(name)
+    
+            // if (dataSet) {
+    
+            //     return Object.values(dataSet.toJSON()).map((item, index) => {
+    
+    
+            //         let key = keyManager.keys[index];
+            //         if (key === undefined) {
+            //             keyManager.keys[index] = keyManager.id;
+            //             key = keyManager.keys[index];
+            //             keyManager.id += 1;
+            //         }
+    
+    
+            //         const errors = []
+            //         Object.values(item).map(each => {
+    
+            //             errors.push(each.error)
+            //         })
+            //         return {
+            //             errors, name: key, isListField: true, key
+            //         }
+            //     })
+            // }
+          
+            return keyManager.keys.map((item, index) => {
+                return {  name: item, isListField: true, key: item }
             })
-        }
-        return []
-    }
-    return (<ListStoreContext.Provider value={{ name }}>{
-        children(mapData(), Operations)
-    }</ListStoreContext.Provider>)
+            //return []
+        },
+        [keyManager.id],
+    )
+    return (<ListStoreContext.Provider value={{
+        name, register: (index: number) => {
+            let key = keyManager.keys[index];
+            if (key === undefined) {
+                keyManager.keys[index] = keyManager.id;
+                key = keyManager.keys[index];
+                keyManager.id += 1;
+                setkeys([2]) // force update
+            }
+        }, id: keyManager.id
+    }}>{
+            children(mapData(), Operations)
+        }</ListStoreContext.Provider>)
 
 })
 
