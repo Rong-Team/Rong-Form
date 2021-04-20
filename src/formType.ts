@@ -260,7 +260,7 @@ export const FormStore = types.model("Form", {
     },
 
     getDataType(name: string) {
-        return self.listFields.get(name).type
+        return self.listFields.get(name)?.type
     },
 
     getListData(name: string) {
