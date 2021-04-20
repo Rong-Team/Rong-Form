@@ -1,4 +1,4 @@
-import { getEnv, types ,flow} from "mobx-state-tree"
+import { getEnv, types, flow } from "mobx-state-tree"
 
 import { defaultValidateMessages } from "./defaultValidateMessage"
 import { FieldStore } from "./Field"
@@ -10,7 +10,12 @@ export const ListFormStore = types.model({
     data: types.optional(types.map(types.map(FieldStore)), {}), // {1: {name1:FieldStore,name2:FieldStore}}
     type: types.optional(types.array(types.string), []),
 
-})
+}).actions((self)=>({
+    reset(){
+        self.data.clear()
+        
+    }
+}))
 
 
 export const FormStore = types.model("Form", {
@@ -19,13 +24,13 @@ export const FormStore = types.model("Form", {
     // list1: [ {"first":FieldStore,"second":FieldStore } ]
 }).actions((self) => ({
 
-    initForm(data:{[name:string]:any}){
-        Object.keys(data).map(item=>{
-            const dataSet=data[item]
-            if(Array.isArray(dataSet)){
+    initForm(data: { [name: string]: any }) {
+        Object.keys(data).map(item => {
+            const dataSet = data[item]
+            if (Array.isArray(dataSet)) {
 
-            }else{
-                
+            } else {
+
             }
         })
     },
@@ -47,11 +52,13 @@ export const FormStore = types.model("Form", {
     },
     reset() {
         self.fields.forEach(item => item.reset())
+        self.listFields.forEach(item=>item.reset())
     },
-    validateFields:flow(function*(field: string, rules: Rule, newVali?: ValidateMessages){
+
+    validateFields: flow(function* (field: string, rules: Rule, newVali?: ValidateMessages) {
         const cur = self.fields.get(field)
         if (cur) {
-           
+
 
             if (!rules) {
                 return
@@ -72,20 +79,20 @@ export const FormStore = types.model("Form", {
         }
     }),
 
-    getFieldError(name:string){
-        const data=self.fields.get(name)
-        if(!data){
+    getFieldError(name: string) {
+        const data = self.fields.get(name)
+        if (!data) {
             return undefined
         }
         return data.error.toJSON()
     },
-    getFieldsError():FieldError[]{
-        return Object.keys(self.fields).map(item=>{
-            return {errors:self.fields.get(item).error.toJSON(),name:item}
+    getFieldsError(): FieldError[] {
+        return Object.keys(self.fields).map(item => {
+            return { errors: self.fields.get(item).error.toJSON(), name: item }
         })
     },
-    isFieldValidating(name:string){
-        return self.fields.get(name)?.validating||false
+    isFieldValidating(name: string) {
+        return self.fields.get(name)?.validating || false
     },
     // register on form 
     registerFromForm(name: string, value?: any[]) {
@@ -151,25 +158,40 @@ export const FormStore = types.model("Form", {
             let dataSet = cur.data
 
             let before = dataSet.get(String(index)) // {init:FieldStore}
-        
+
             let beforeVal = Object.values(before.toJSON())[0]
-            let beforeKey=Object.keys(before.toJSON())[0]
+            let beforeKey = Object.keys(before.toJSON())[0]
             let newVal = { ...beforeVal, ...value }
-         
-            dataSet.set(String(index), {[beforeKey]:newVal})
-            cur.data=dataSet
+
+            dataSet.set(String(index), { [beforeKey]: newVal })
+            cur.data = dataSet
             self.listFields.set(name[0], cur)
 
         }
     },
 
+    fillValues(name: string, values: any[]) {
+        const list = self.listFields.get(name)?.data
+        Object.keys(list).map((item,index) => {
+            let cur = list.get(item)
+            let content=Object.keys(cur)
+            if (content.length===1){
+                cur.set(content[0],{...cur.get(content[0]),value:values[index]})
+            }else{
+                content.map(each=>{
+                    cur.set(each,{...cur.get(each),value:values[index][each]})
+                })
+            }
+        })
+    },
+
     // add value to list
     addListValue(name: string, values?: any, index?: number) {
         const list = self.listFields.get(name)
-        
+
         let dataSet = list.data
         let newValue
-        let ind=String(index||dataSet.size)
+        let ind = String(index || dataSet.size)
         if (list.type.length === 1) {
 
             newValue = { [ind]: { name: ind, value: values, error: null } }
@@ -196,7 +218,7 @@ export const FormStore = types.model("Form", {
         const cur = self.listFields.get(name)
         let dataSet = cur.data
         dataSet.delete(String(index))
-      
+
         self.listFields.set(name, { ...cur, data: dataSet })
     }
 
