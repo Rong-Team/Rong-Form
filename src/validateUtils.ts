@@ -53,7 +53,7 @@ export async function validateRule(name: string, value: any, rule: RuleObject, o
     messageVariables?: Record<string, string>,):Promise<string[]> {
     
     const cloneRule = { ...rule };
-    console.log()
+
     // We should special handle array validate
     let subRuleField: RuleObject = null;
     if (cloneRule && cloneRule.type === 'array' && cloneRule.defaultField) {
