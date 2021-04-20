@@ -13,7 +13,7 @@ export const ListFormStore = types.model({
 }).actions((self)=>({
     reset(){
         self.data.clear()
-        
+
     }
 }))
 
