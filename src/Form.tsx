@@ -9,18 +9,21 @@ import { Callbacks, FieldError, Rule, ValidateMessages, ValidateTriggerType } fr
 
 
 
-export interface FormInstance {
+export interface IFormInstance {
     getFieldValue: (name: string) => string
     getFieldsValue: () => { [name: string]: any }
     getFieldError: (name: string) => string[]
     getFieldsError: () => FieldError[]
     isFieldValidating: (name: string) => boolean
+    fillValue:(name:string,value:any)=>void
+    fillValues:(data:any)=>void
     submit: () => void
+    reset:()=>void
 }
 
 export interface IFormProps {
     initialValues?: { [name: string]: any },
-    children?: React.ReactNode | ((form: FormInstance) => React.ReactNode),
+    children?: React.ReactNode | ((form: IFormInstance) => React.ReactNode),
     component?: false | string | React.FC<any>,
     name?: string
     onValuesChange?: Callbacks<any>['onValuesChange']
@@ -30,7 +33,7 @@ export interface IFormProps {
     validateTrigger?: ValidateTriggerType[]
 }
 const formState = FormStore.create({ fields: {} },)
-const Form = React.forwardRef<FormInstance, IFormProps>(({
+const Form = React.forwardRef<IFormInstance, IFormProps>(({
     children,
     component: Component = "form" as any,
     onFinish,
@@ -62,6 +65,26 @@ const Form = React.forwardRef<FormInstance, IFormProps>(({
             },
             submit() {
                 formRef.current.submit()
+            },
+            fillValue(name,value){
+                return formState.setField(name,value)
+            },
+            fillValues(data:{[name:string]:any}){
+                Object.keys(data).map(item=>{
+                    if(formState.hasField(item)){
+                        if(!Array.isArray(data[item])&&!(typeof data[item]==='object')){
+                            formState.setField(item,data[item])
+                        }
+                    }else if(formState.hasList(item)){
+                        const source=data[item]
+                        if(Array.isArray(source)){
+                            formState.fillValues(item,source)
+                        }
+                    }
+                })
+            },
+            reset(){
+                formState.reset()
             }
         }),
         [],
