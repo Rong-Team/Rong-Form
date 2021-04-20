@@ -72,7 +72,7 @@ const Field: React.FC<IField> = observer(({
             const type = store.getDataType(name[0])
             list?.register(Number(name[0]))
             if (name.length === 2) {
-                if (type.indexOf(name[1]) === -1) {
+                if (type?.indexOf(name[1]) === -1) {
                     store.registerFromField([listName, name[1]])
 
                 }
@@ -103,6 +103,7 @@ const Field: React.FC<IField> = observer(({
     const handleDependencies = () => {
         if (dependencies) {
             return dependencies.map(item => {
+                
                 return store.getFieldByName(String(item))
             })
         }
