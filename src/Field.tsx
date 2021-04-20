@@ -34,7 +34,7 @@ export interface IField {
     rules?: RuleObject,
     isListField?: boolean,
     initialValue?: string,
-    children:React.ReactNode|((dependencies: IFieldStore[],controls:any)=>React.ReactNode)
+    children: React.ReactNode | ((dependencies: IFieldStore[], controls: any) => React.ReactNode)
 }
 
 const Field: React.FC<IField> = observer(({
@@ -44,7 +44,7 @@ const Field: React.FC<IField> = observer(({
     valuePropName = "value",
     defaultValue = "",
     getValueFromEvents,
-    validateTrigger=["onChange"],
+    validateTrigger = ["onChange"],
     rules,
     isListField = false,
     initialValue,
@@ -58,7 +58,7 @@ const Field: React.FC<IField> = observer(({
 
     useEffect(() => {
 
-       
+
         // register field into form
         if (!isListField) {
             // when 
@@ -94,16 +94,16 @@ const Field: React.FC<IField> = observer(({
     const getMeta = () => {
         const data = store.getFieldByName(name as string)
         return {
-            errors: data.error,
-            validating: data.validating,
+            errors: data?.error,
+            validating: data?.validating,
             name: [name]
         } as Meta
     }
 
-    const handleDependencies=()=>{
-        if(dependencies){
-            return dependencies.map(item=>{
-                return store.getFieldByName( String(item))
+    const handleDependencies = () => {
+        if (dependencies) {
+            return dependencies.map(item => {
+                return store.getFieldByName(String(item))
             })
         }
     }
@@ -112,11 +112,12 @@ const Field: React.FC<IField> = observer(({
         if (typeof children === 'function') {
             const meta = getMeta()
             return {
-                ...getOnlyChild(children(getControlled(), meta)),
+                ...getOnlyChild(children(getControlled(), meta, handleDependencies())),
                 isFunction: true
             }
         }
         const childList = toChildrenArray(children);
+
         if (childList.length !== 1 || !React.isValidElement(childList[0])) {
             return { child: childList, isFunction: false };
         }
@@ -125,8 +126,16 @@ const Field: React.FC<IField> = observer(({
 
     }
     const getControlled: any = (childProps: { [name: string]: any }) => {
+        if (!childProps) {
+            return {}
+        }
+        if (!Object.keys(childProps).includes(trigger)) {
+            return {}
+        }
         const originTriggerFunc: any = childProps[trigger];
+
         const mergedGetValueProps = ((val) => ({ [valuePropName]: val }));
+
         let control
         // not list item
         if (!isListField) {
@@ -145,10 +154,10 @@ const Field: React.FC<IField> = observer(({
                 value = valueSet[name[1]]?.value
             } else {
                 const valueSet = store.getOneSet(listName, Number(name))
-             
+
                 if (valueSet) {
                     value = Object.values(valueSet)[0]?.value
-                   
+
                 }
 
             }
@@ -205,12 +214,12 @@ const Field: React.FC<IField> = observer(({
     }
 
 
-    const returnChild =  () => {
+    const returnChild = () => {
 
         let returnChildNode = null
         const { child, isFunction } = getOnlyChild(children);
         if (isFunction) {
-            return child(handleDependencies(),getControlled({}))
+            returnChildNode = child
         } else if (React.isValidElement(child)) {
             returnChildNode = React.cloneElement(
                 child as React.ReactElement,
