@@ -11,7 +11,7 @@ export interface ListOperations {
     //move: (from: number, to: number) => void;
 }
 
-export interface ListProps {
+export interface IListProps {
     name: string;
     // rules?: ValidatorRule[];
     validateTrigger?: string | string[] | false;
@@ -23,7 +23,7 @@ export interface ListProps {
     ) => JSX.Element | React.ReactNode;
 }
 
-const List: React.FC<ListProps> = observer((props) => {
+const List: React.FC<IListProps> = observer((props) => {
     const {
         children,
         validateTrigger,
