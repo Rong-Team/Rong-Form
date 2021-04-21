@@ -90,8 +90,9 @@ const Form = React.forwardRef<IFormInstance, IFormProps>(({
         [],
     )
 
-    const getValues = (args) => {
-        return formState.getFieldKeys(args[0], args[1])
+    const getValues = (args,isList:boolean) => {
+        const fields= isList?formState.getFieldKeys():formState.getFieldKeys(args[0], args[1])
+        const listfields=isList?formState.getListValues():formState.getListValues(args[0],args[1],args[2])
     }
     // const getValueFromlist(args)=>{
     //     return formState.getListValues(args[0],)
@@ -101,13 +102,13 @@ const Form = React.forwardRef<IFormInstance, IFormProps>(({
             addMiddleware(baseStore, (call, next, abort) => {
                 if (call.name === "setField") {
                     const args = call.args
-                    onValuesChange({ [args[0]]: args[1] }, getValues(args))
+                    onValuesChange({ [args[0]]: args[1] }, getValues(args,false))
                 } else if (call.name === "changeListValue") {
                     const args = call.args
                     const name = args[0]
                     const value = args[1]["value"]
                     if (name.length === 1) {
-                        //  onValuesChange(value,getValueFromlist())
+                          onValuesChange(value,getValues(args,true))
                     }
                 }
                 return next(call)
