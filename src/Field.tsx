@@ -11,8 +11,8 @@ export const FieldStore = types.model("field", {
     value: types.maybeNull(types.string),
     error: types.maybeNull(types.array(types.string)),
     defaultValue: types.maybeNull(types.string),
-    validating: types.optional(types.boolean, false)
-
+    validating: types.optional(types.boolean, false),
+    dependencies:types.optional(types.array(types.string),[])
 }).actions((self) => ({
     setValue(value: any) {
         self.value = value
@@ -34,7 +34,7 @@ export interface IField {
     rules?: RuleObject,
     isListField?: boolean,
     initialValue?: string,
-    children: React.ReactNode | ((dependencies: IFieldStore[], controls: any) => React.ReactNode)
+    children: React.ReactNode | (( controls: any,meta:any,dependencies: IFieldStore[],) => React.ReactNode)
 }
 
 const Field: React.FC<IField> = observer(({
@@ -63,7 +63,7 @@ const Field: React.FC<IField> = observer(({
         if (!isListField) {
             // when 
             if (name && typeof name === 'string' && !store.hasField(name)) {
-                store.registerField({ name, value: initialValue || defaultValue, defaultValue })
+                store.registerField({ name, value: initialValue || defaultValue, defaultValue,dependencies })
             } else {
                 warning(false, "Duplicated Name in form")
             }
@@ -103,8 +103,8 @@ const Field: React.FC<IField> = observer(({
     const handleDependencies = () => {
         if (dependencies) {
             return dependencies.map(item => {
-                
-                return store.getFieldByName(String(item))
+                const c=store.getFieldByName(String(item))
+                return {name:c.name,value:c.value,errors:c.error}
             })
         }
     }
