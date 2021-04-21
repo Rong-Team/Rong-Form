@@ -9,9 +9,9 @@ export const ListFormStore = types.model({
     name: types.identifier,
     data: types.optional(types.map(types.map(FieldStore)), {}), // {1: {name1:FieldStore,name2:FieldStore}}
     type: types.optional(types.array(types.string), []),
-
-}).actions((self)=>({
-    reset(){
+    dependencies:types.optional(types.array(types.string),[])
+}).actions((self) => ({
+    reset() {
         self.data.clear()
 
     }
@@ -52,8 +52,16 @@ export const FormStore = types.model("Form", {
     },
     reset() {
         self.fields.forEach(item => item.reset())
-        self.listFields.forEach(item=>item.reset())
+        self.listFields.forEach(item => item.reset())
     },
+
+    registerDependencies(name:string,dependencies:string[]){
+        dependencies.map(item=>{
+            const cur=self.fields.get(item)
+            self.fields.set(item,{...cur,dependencies:[...cur?.dependencies,name]})
+        })
+    }
+
 
     validateFields: flow(function* (field: string, rules: Rule, newVali?: ValidateMessages) {
         const cur = self.fields.get(field)
@@ -170,16 +178,17 @@ export const FormStore = types.model("Form", {
         }
     },
 
+
     fillValues(name: string, values: any[]) {
         const list = self.listFields.get(name)?.data
-        Object.keys(list).map((item,index) => {
+        Object.keys(list).map((item, index) => {
             let cur = list.get(item)
-            let content=Object.keys(cur)
-            if (content.length===1){
-                cur.set(content[0],{...cur.get(content[0]),value:values[index]})
-            }else{
-                content.map(each=>{
-                    cur.set(each,{...cur.get(each),value:values[index][each]})
+            let content = Object.keys(cur)
+            if (content.length === 1) {
+                cur.set(content[0], { ...cur.get(content[0]), value: values[index] })
+            } else {
+                content.map(each => {
+                    cur.set(each, { ...cur.get(each), value: values[index][each] })
                 })
             }
         })
@@ -232,13 +241,13 @@ export const FormStore = types.model("Form", {
     getFieldByName(name: string) {
         return self.fields.get(name)
     },
-    getFieldKeys(key, value) {
+    getFieldKeys(key?: any, value?: any) {
         let cur = {}
         self.fields.forEach((item) => {
             if (item.name === key) {
-                cur[item.name] = { name: item.name, value: value }
+                cur[item.name] = value
             } else {
-                cur[item.name] = { name: item.name, value: item.value }
+                cur[item.name] = item.value
             }
 
         })
@@ -270,24 +279,55 @@ export const FormStore = types.model("Form", {
         return self.listFields.get(name)?.data.get(String(index))?.toJSON()
     },
 
-    getListValues(name: string[], index: number, value: any) {
-        const dataSet = self.listFields.get(name[0]).data
-        let c = []
-        if (dataSet) { // dataset={0:{name:FieldStore,pwd:FieldStore}}
-            Object.values(dataSet).map(item => {
-                let a = {}
-                Object.values(item).map((each: any) => {
-                    if (Object.keys(item).length === 1) {
-                        c.push(each?.value)
-                    } else {
-                        a[each.name] = each.value
+    getListValues(name?: string[], index?: number, value?: any) {
+        if (name && index && value) {
+            const dataSet = self.listFields.get(name[0]).data.toJSON()
+            let c = []
+            if (dataSet) { // dataset={0:{name:FieldStore,pwd:FieldStore}}
+                Object.keys(dataSet).map(item => {
+                    let a = {}
+                    Object.values(dataSet[item]).map((each: any) => {
+                        if (Object.keys(dataSet[item]).length === 1) {
+                            if (item == String(index)) {
+                                c.push(each?.value)
+                            } else {
+                                c.push(each?.value)
+                            }
+                        } else {
+                            if (item == String(index)) {
+                                a[each.name] = value
+                            } else {
+                                a[each.name] = each.value
+                            }
+                        }
+                    })
+                    if (Object.keys(dataSet[item]).length > 1) {
+                        c.push(a)
                     }
                 })
-                if (Object.keys(item).length > 1) {
-                    c.push(a)
-                }
+                return { [name[0]]: c }
+            }
+        } else {
+            let res = {}
+            self.listFields.forEach(item => {
+                const cur = item.data.toJSON()
+                const curList = []
+                Object.values(cur).map(value => {
+                    let a = {}
+                    Object.values(value).map(each => {
+                        if (Object.keys(value).length === 1) {
+                            curList.push(each.value)
+                        } else {
+                            a[each.name] = each.value
+                        }
+                    })
+                    if (Object.keys(value).length > 1) {
+                        curList.push(a)
+                    }
+                })
+                res[item.name] = curList
             })
-            return { [name[0]]: c }
+            return res
         }
 
     }
