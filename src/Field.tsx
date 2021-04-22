@@ -1,8 +1,8 @@
 import { types, } from 'mobx-state-tree'
 import { inject, observer, } from 'mobx-react'
 import React, { Component, useContext, useEffect, useMemo } from 'react'
-import { defaultGetValueFromEvent, toArray, toArray as toChildrenArray, warning } from './utils'
-import { IFieldStore, Meta, NamePath, Rule, RuleObject, ValidateTriggerType } from './interface'
+import { defaultGetValueFromEvent,  toArray as toChildrenArray, warning } from './utils'
+import { IFieldStore, Meta,  RuleObject, ValidateTriggerType } from './interface'
 import { ListStoreContext, useMst } from './context'
 
 export const FieldStore = types.model("field", {
@@ -12,14 +12,17 @@ export const FieldStore = types.model("field", {
     error: types.maybeNull(types.array(types.string)),
     defaultValue: types.maybeNull(types.string),
     validating: types.optional(types.boolean, false),
-    dependencies:types.optional(types.array(types.string),[])
+    dependencies:types.optional(types.array(types.string),[]),
+    dependsOn:types.optional(types.map(types.string),{})
 }).actions((self) => ({
     setValue(value: any) {
         self.value = value
     },
     reset() {
         self.value = null
-    }
+    },
+
+    
 }))
 
 export interface IField {
@@ -27,14 +30,14 @@ export interface IField {
     defaultValue?: string
     trigger?: string,
     validateTrigger?: ValidateTriggerType[]
-    dependencies?: NamePath[],
+    dependencies?: string[],
     valuePropName?: string
     getValueFromEvents?: (...args: any) => any
     // renderer:React.ReactNode
     rules?: RuleObject,
     isListField?: boolean,
     initialValue?: string,
-    children: React.ReactNode | (( controls: any,meta:any,dependencies: IFieldStore[],) => React.ReactNode)
+    children: React.ReactNode | (( controls: any,meta:any,dependencies: {[name:string]:IFieldStore},) => React.ReactNode)
 }
 
 const Field: React.FC<IField> = observer(({
@@ -63,7 +66,8 @@ const Field: React.FC<IField> = observer(({
         if (!isListField) {
             // when 
             if (name && typeof name === 'string' && !store.hasField(name)) {
-                store.registerField({ name, value: initialValue || defaultValue, defaultValue,dependencies })
+                store.registerField({ name, value: initialValue || defaultValue, defaultValue,dependencies:[] })
+             //   store.registerDependencies(name,dependencies)
             } else {
                 warning(false, "Duplicated Name in form")
             }
@@ -102,10 +106,15 @@ const Field: React.FC<IField> = observer(({
 
     const handleDependencies = () => {
         if (dependencies) {
-            return dependencies.map(item => {
+            let res={}
+            dependencies.map(item => {
                 const c=store.getFieldByName(String(item))
-                return {name:c.name,value:c.value,errors:c.error}
+               if(c){
+                res[item]={name:c.name,value:c.value,errors:c.error} 
+               }
+               return null
             })
+            return res
         }
     }
 
@@ -113,7 +122,7 @@ const Field: React.FC<IField> = observer(({
         if (typeof children === 'function') {
             const meta = getMeta()
             return {
-                ...getOnlyChild(children(getControlled(), meta, handleDependencies())),
+                ...getOnlyChild(children(getControlled(),meta,handleDependencies() )),
                 isFunction: true
             }
         }
@@ -127,12 +136,12 @@ const Field: React.FC<IField> = observer(({
 
     }
     const getControlled: any = (childProps: { [name: string]: any }) => {
+       
         if (!childProps) {
             return {}
         }
-        if (!Object.keys(childProps).includes(trigger)) {
-            return {}
-        }
+    
+        
         const originTriggerFunc: any = childProps[trigger];
 
         const mergedGetValueProps = ((val) => ({ [valuePropName]: val }));
@@ -167,7 +176,9 @@ const Field: React.FC<IField> = observer(({
                 ...mergedGetValueProps(value || "")
             }
         }
+       
         control[trigger] = (...args: any) => {
+            
             let newValue
             if (getValueFromEvents) {
                 newValue = getValueFromEvents(...args)
@@ -182,6 +193,8 @@ const Field: React.FC<IField> = observer(({
                 }
             } else {
                 store.setField(name as string, newValue)
+               
+                store.changeDependencies(name as string,newValue)
             }
 
             if (originTriggerFunc) {
@@ -219,6 +232,7 @@ const Field: React.FC<IField> = observer(({
 
         let returnChildNode = null
         const { child, isFunction } = getOnlyChild(children);
+        
         if (isFunction) {
             returnChildNode = child
         } else if (React.isValidElement(child)) {
