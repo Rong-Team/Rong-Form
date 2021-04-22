@@ -60,9 +60,9 @@ export async function validateRule(name: string, value: any, rule: RuleObject, o
         subRuleField = cloneRule.defaultField;
         delete cloneRule.defaultField;
     }
-
+    
     const validator = new AsyncValidator({
-        [name]: [Object.values(cloneRule)[0]],
+        [name]: [cloneRule],
     });
     const messages: ValidateMessages = convertMessages(
         options.validateMessages,
