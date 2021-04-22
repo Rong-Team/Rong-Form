@@ -32,7 +32,7 @@ export interface IFormProps {
     validateMessages?: ValidateMessages
     validateTrigger?: ValidateTriggerType[]
 }
-const formState = FormStore.create({ fields: {} },)
+
 const Form = React.forwardRef<IFormInstance, IFormProps>(({
     children,
     component: Component = "form" as any,
@@ -42,7 +42,7 @@ const Form = React.forwardRef<IFormInstance, IFormProps>(({
     validateTrigger = [],
     initialValues
 }, ref) => {
-
+    const formState = FormStore.create({ fields: {} },)
     const formRef = useRef<HTMLFormElement>()
 
     useImperativeHandle(
@@ -93,6 +93,7 @@ const Form = React.forwardRef<IFormInstance, IFormProps>(({
     const getValues = (args,isList:boolean) => {
         const fields= isList?formState.getFieldKeys():formState.getFieldKeys(args[0], args[1])
         const listfields=isList?formState.getListValues():formState.getListValues(args[0],args[1],args[2])
+        return fields
     }
     // const getValueFromlist(args)=>{
     //     return formState.getListValues(args[0],)
