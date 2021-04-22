@@ -43,7 +43,7 @@ export const FormStore = types.model("Form", {
         self.fields.delete(name)
     },
     setField(name: string, value: any) {
- 
+
         const cur = self.fields.get(name)
         self.fields.set(name, { ...cur, value })
     },
@@ -91,6 +91,7 @@ export const FormStore = types.model("Form", {
             }
             self.fields.set(field, { ...cur, validating: true })
             const promise = yield validateRule(field, cur.value, rules, { validateMessages: { ...defaultValidateMessages, ...newVali }, })
+           
             self.fields.set(field, { ...cur, validating: false, error: promise })
             // Promise.resolve(promise).then(()=>{
             //     self.fields.set(field, { ...cur, validating: false, error: null })
