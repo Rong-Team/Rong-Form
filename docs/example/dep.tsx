@@ -7,7 +7,10 @@ export default ()=>{
             <Field name="field1" dependencies={["field2"]}>
                 {
                     (control,meta,dependeices)=>{
-                        console.log(dependeices)
+                       
+                        if(dependeices["field2"]?.value==="OK"){
+                            return "OK"
+                        }
                         return <input {...control} />
                     }
                 }
