@@ -9,11 +9,10 @@ export const ListFormStore = types.model({
     name: types.identifier,
     data: types.optional(types.map(types.map(FieldStore)), {}), // {1: {name1:FieldStore,name2:FieldStore}}
     type: types.optional(types.array(types.string), []),
-    dependencies:types.optional(types.array(types.string),[])
+    dependencies: types.optional(types.array(types.string), [])
 }).actions((self) => ({
     reset() {
         self.data.clear()
-
     }
 }))
 
@@ -37,12 +36,14 @@ export const FormStore = types.model("Form", {
 
     // normal fields
     registerField(data) {
+       
         self.fields.put(data)
     },
     dropField(name: string) {
         self.fields.delete(name)
     },
     setField(name: string, value: any) {
+ 
         const cur = self.fields.get(name)
         self.fields.set(name, { ...cur, value })
     },
@@ -55,12 +56,29 @@ export const FormStore = types.model("Form", {
         self.listFields.forEach(item => item.reset())
     },
 
-    registerDependencies(name:string,dependencies:string[]){
-        dependencies.map(item=>{
-            const cur=self.fields.get(item)
-            self.fields.set(item,{...cur,dependencies:[...cur?.dependencies,name]})
+    registerDependencies(name: string, dependencies: string[]) {
+        dependencies?.map(item => {
+            const cur = self.fields.get(item)
+            if (cur) {
+                if (!cur?.dependencies) {
+
+                    self.fields.set(item, { ...cur, dependencies: [name] as any })
+                } else {
+                    self.fields.set(item, { ...cur, dependencies: [...cur.dependencies, name] as any })
+                }
+            }
         })
-    }
+    },
+    changeDependencies(name: string, value: string) {
+       
+        const dependencies = self.fields.get(name)?.dependencies
+        dependencies?.map(item => {
+            const source = self.fields.get(item)
+            const dependsOn = { ...source?.dependsOn, [name]: value }
+            self.fields.set(item, { ...source, dependsOn })
+            
+        })
+    },
 
 
     validateFields: flow(function* (field: string, rules: Rule, newVali?: ValidateMessages) {
