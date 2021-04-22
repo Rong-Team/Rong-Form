@@ -37,7 +37,7 @@ export interface IField {
     rules?: RuleObject,
     isListField?: boolean,
     initialValue?: string,
-    children: React.ReactNode | (( controls: any,meta:any,dependencies: {[name:string]:IFieldStore},) => React.ReactNode)
+    children: React.ReactNode | (( controls: any,meta:Meta,dependencies: {[name:string]:IFieldStore},) => React.ReactNode)
 }
 
 const Field: React.FC<IField> = observer(({
@@ -98,9 +98,9 @@ const Field: React.FC<IField> = observer(({
     const getMeta = () => {
         const data = store.getFieldByName(name as string)
         return {
-            errors: data?.error,
+            errors: data?.error?.toJSON(),
             validating: data?.validating,
-            name: [name]
+            name
         } as Meta
     }
 
@@ -122,7 +122,7 @@ const Field: React.FC<IField> = observer(({
         if (typeof children === 'function') {
             const meta = getMeta()
             return {
-                ...getOnlyChild(children(getControlled(),meta,handleDependencies() )),
+                ...getOnlyChild(children(getControlled({}),meta,handleDependencies() )),
                 isFunction: true
             }
         }
@@ -137,9 +137,7 @@ const Field: React.FC<IField> = observer(({
     }
     const getControlled: any = (childProps: { [name: string]: any }) => {
        
-        if (!childProps) {
-            return {}
-        }
+    
     
         
         const originTriggerFunc: any = childProps[trigger];
@@ -206,6 +204,7 @@ const Field: React.FC<IField> = observer(({
         mergedValidate.forEach(item => {
             const originTrigger = control[item];
             control[item] = (...args: any) => {
+                
                 if (originTrigger) {
                     originTrigger(...args);
                 }
@@ -214,7 +213,7 @@ const Field: React.FC<IField> = observer(({
 
                 if (!isListField) {
                     if (rules) {
-
+                    
                         store.validateFields(name as string, rules, validateMessage)
                     }
                 } else {
