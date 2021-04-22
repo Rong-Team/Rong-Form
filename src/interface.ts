@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { ReactElement, ReducerAction } from 'react';
 
 
@@ -24,7 +25,7 @@ export interface FieldData extends Partial<Omit<InternalFieldData, 'name'>> {
     name: NamePath;
 }
 export interface FieldEntity {
- 
+
     isFieldTouched: () => boolean;
     isFieldDirty: () => boolean;
     isFieldValidating: () => boolean;
@@ -87,7 +88,7 @@ export interface InternalHooks {
     initEntityValue: (entity: FieldEntity) => void;
     registerField: (entity: FieldEntity) => () => void;
     useSubscribe: (subscribable: boolean) => void;
-   
+
     setCallbacks: (callbacks: Callbacks) => void;
     getFields: (namePathList?: InternalNamePath[]) => FieldData[];
     setValidateMessages: (validateMessages: ValidateMessages) => void;
@@ -97,16 +98,16 @@ export interface InternalHooks {
 
 export type InternalFormInstance = Omit<FormInstance, 'validateFields'> & {
     validateFields: InternalValidateFields;
-  
+
     /**
      * Passed by field context props
      */
     prefixName?: InternalNamePath;
-  
+
     validateTrigger?: string | string[] | false;
-  
+
     getInternalHooks: (secret: string) => InternalHooks | null;
-  };
+};
 
 
 //-------------------------------------------------------------------------------------------------------------
@@ -243,13 +244,66 @@ export interface ValidateMessages {
     };
 }
 
-export type ValidateTriggerType='onChange'|'onBlur'
+export type ValidateTriggerType = 'onChange' | 'onBlur'
 
 
 export interface IFieldStore {
-    name:string
-    value:string
-    defaultValue?:string
-    error?:boolean
-    validating?:boolean
+    name: string
+    value: string
+    defaultValue?: string
+    error?: boolean
+    validating?: boolean
 }
+
+export interface SchemaField {
+    title: string
+    type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'list'
+    widget ?:string
+    componentprops?: {
+        name?: 'input' | 'select',
+        type?: 'checkbox' | 'color' | 'date' | 'datetime-local' |
+        'file' |  'month' | 'number' | 'radio' | 'range' | 'week' |'text'
+        trigger?: string
+        valueProps?: string
+        select?: {
+            optionValues: string[]
+            optionNames: string[]
+            default?:string,
+            multiple?:boolean
+        },
+        // used in range and number
+        range?:{
+            min?:number
+            max?:number
+            step?:number
+        },
+        //used in date related
+        date?:{
+            min?:string,
+            max?:string
+        },
+        file?:{
+            accept?:string
+        },
+        
+
+    },
+
+    required?:boolean
+    placeholder?: string,
+    defaultValues?: any,
+    dependencies?: string[],
+    actions:{
+
+    }
+    rules?:RuleObject
+}
+
+export interface SchemaType {
+    type: 'object' | 'list',
+
+    properties: {
+        [name: string]: SchemaField
+    }
+}
+
