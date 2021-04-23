@@ -93,16 +93,6 @@ export const FormStore = types.model("Form", {
             const promise = yield validateRule(field, cur.value, rules, { validateMessages: { ...defaultValidateMessages, ...newVali }, })
            
             self.fields.set(field, { ...cur, validating: false, error: promise })
-            // Promise.resolve(promise).then(()=>{
-            //     self.fields.set(field, { ...cur, validating: false, error: null })
-            // }).catch(e=>{
-            //     self.fields.set(field, { ...cur, validating: false, error: e })
-            // })
-            // promise.then(() => {
-            //     self.fields.set(field, { ...cur, validating: false, error: null })
-            // }).catch(e => {
-            //     self.fields.set(field, { ...cur, validating: false, error: e })
-            // })
         }
     }),
 
