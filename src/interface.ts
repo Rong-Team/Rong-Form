@@ -257,11 +257,12 @@ export interface IFieldStore {
 
 export interface SchemaField {
     title: string
-    type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'list'
+    name:string
+    type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'list' 
     widget ?:string
     componentprops?: {
         name?: 'input' | 'select',
-        type?: 'checkbox' | 'color' | 'date' | 'datetime-local' |
+        type?: 'checkbox' | 'color' | 'date' | 'datetime-local' |'email'|'password'|'url'|
         'file' |  'month' | 'number' | 'radio' | 'range' | 'week' |'text'
         trigger?: string
         valueProps?: string
@@ -271,6 +272,7 @@ export interface SchemaField {
             default?:string,
             multiple?:boolean
         },
+
         // used in range and number
         range?:{
             min?:number
@@ -292,16 +294,18 @@ export interface SchemaField {
     required?:boolean
     placeholder?: string,
     defaultValues?: any,
+    // list of dependencies
     dependencies?: string[],
+    // used for handle dependencies
     actions:{
-
+        [name:string]:string
     }
     rules?:RuleObject
 }
 
 export interface SchemaType {
     type: 'object' | 'list',
-
+    name:string
     properties: {
         [name: string]: SchemaField
     }
