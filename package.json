@@ -1,14 +1,24 @@
 {
   "name": "rong-form",
   "version": "0.1.0",
-  "description": "Modern minimized ",
-  "main": "index.js",
+  "description": "Modern form management library for React powered by Mobx",
+  "main": "./lib/index",
+  "module": "./es/index",
   "scripts": {
     "start": "dumi dev",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prettier": "prettier --write \"**/*.{js,jsx,tsx,ts,less,md,json}\""
+    "docs:build": "dumi build",
+    "docs:deploy": "gh-pages -d .doc",
+    "deploy": "npm run docs:build && npm run docs:deploy",
+    "prettier": "prettier --write \"**/*.{js,jsx,tsx,ts,less,md,json}\"",
+    "build": "father-build"
   },
-  "keywords": [],
+  "files": [
+    "lib",
+    "es",
+    "dist"
+  ],
+  "keywords": ["react","form","mobx"],
   "author": "Tingzhou Jia",
   "license": "MIT",
   "peerDependencies": {
@@ -27,6 +37,7 @@
     ]
   },
   "dependencies": {
+    "@babel/runtime": "^7.13.17",
     "async-validator": "^3.5.1",
     "mobx": "^6.2.0",
     "mobx-react": "^7.1.0",
@@ -40,7 +51,7 @@
     "deep-equal": "^2.0.3",
     "dumi": "^1.0.33",
     "father": "^2.30.4",
-    "father-build": "^1.17.2",
+    "father-build": "^1.18.6",
     "fetch-jsonp": "^1.1.3",
     "gh-pages": "^3.0.0",
     "lint-staged": "^10.0.7",
