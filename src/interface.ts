@@ -253,6 +253,8 @@ export interface IFieldStore {
     defaultValue?: string
     error?: boolean
     validating?: boolean
+    dependencies?:string[]
+    
 }
 
 export interface SchemaField {
