@@ -9,7 +9,7 @@ export const ListFormStore = types.model({
     name: types.identifier,
     data: types.optional(types.map(types.map(FieldStore)), {}), // {1: {name1:FieldStore,name2:FieldStore}}
     type: types.optional(types.array(types.string), []),
-    dependencies: types.optional(types.array(types.string), [])
+    // dependencies: types.optional(types.array(types.string), [])
 }).actions((self) => ({
     reset() {
         self.data.clear()
@@ -27,9 +27,28 @@ export const FormStore = types.model("Form", {
         Object.keys(data).map(item => {
             const dataSet = data[item]
             if (Array.isArray(dataSet)) {
-
+                let first=dataSet[0]
+                if(typeof first!=='object'){
+                    const sets={}
+                    dataSet.map((each,index)=>{
+                            sets[index]= {[index]:{name:index,value:each}}
+                    })
+                    self.listFields.set(item,{type:['1'],data:sets,name:item})
+                }else{
+                    let type=Object.keys(first)
+                    let items={}
+                    dataSet.map((item,index)=>{
+                        let temp={}
+                        Object.keys(item).map((eachKey)=>{
+                            temp[eachKey]={name:eachKey,value:item[eachKey]}
+                        })
+                        items[index]=temp
+                    })
+                    self.listFields.put({name:item,data:items,type})
+                }
             } else {
-
+                let curData:any={name:item,value:dataSet}
+                self.fields.set(item,curData)
             }
         })
     },
@@ -69,7 +88,7 @@ export const FormStore = types.model("Form", {
             }
         })
     },
-    changeDependencies(name: string, value: string) {
+    changeDependencies(name: string, value: any) {
        
         const dependencies = self.fields.get(name)?.dependencies
         dependencies?.map(item => {
