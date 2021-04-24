@@ -8,7 +8,7 @@ import { ListStoreContext, useMst } from './context'
 export const FieldStore = types.model("field", {
     name: types.identifier,
 
-    value: types.maybeNull(types.string),
+    value: types.maybeNull(types.frozen()),
     error: types.maybeNull(types.array(types.string)),
     defaultValue: types.maybeNull(types.string),
     validating: types.optional(types.boolean, false),
@@ -16,7 +16,7 @@ export const FieldStore = types.model("field", {
     dependsOn:types.optional(types.map(types.string),{})
 }).actions((self) => ({
     setValue(value: any) {
-        self.value = value
+        self.value = value 
     },
     reset() {
         self.value = null
