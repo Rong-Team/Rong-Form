@@ -32,4 +32,6 @@ ReactDOM.render(
 );
 ```
 
+> For further updates please visit [RForm](https://github.com/TingzhouJia/RForm)
+
 <br/>
